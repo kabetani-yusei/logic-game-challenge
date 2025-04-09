@@ -59,7 +59,7 @@ const theme = createTheme({
 
 interface GameCardProps {
   title: string
-  description: string
+  description: React.ReactNode
   to: string
 }
 
@@ -169,13 +169,20 @@ function HomePage() {
           <GameCardWrapper>
             <GameCard
               title="ストレンジオセロ"
-              description="白黒の石を挟んで相手の石を自分の色に変える盤面ゲーム"
+              description="通常とは異なる初期盤面から始まるオセロ"
               to="/strange-othello"
             />
           </GameCardWrapper>
 
           <GameCardWrapper>
-            <GameCard title="mod Mゲーム" description="数字を選んで倍数関係を作る数学的思考ゲーム" to="/mod-m" />
+            <GameCard title="mod Mゲーム"
+              description={
+                <>
+                  倍数にならないようにする数学パズル<br />
+                  出典：AtCoder Regular Contest 185 A 問題
+                </>
+              }
+              to="/mod-m" />
           </GameCardWrapper>
         </Box>
       </Container>
