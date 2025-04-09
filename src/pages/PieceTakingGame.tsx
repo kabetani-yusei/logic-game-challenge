@@ -154,22 +154,25 @@ export default function PieceTakingGame() {
   }, [gameState])
 
   // 駒を描画する関数
-  const renderPieces = (color: string, count: number, gridArea: string) => {
+  // 変更点: 各駒内から「駒」と表示するTypography要素を削除
+  const renderPieces = (color: string, count: number, gridArea: string, isSelected: boolean) => {
     const pieces = []
     const pieceColor = color === "blue" ? "#3f51b5" : color === "yellow" ? "#f9a825" : "#f44336"
-    const borderColor = color === "blue" ? "#4CAF50" : color === "yellow" ? "#9E9E9E" : "#9E9E9E"
+    // 選択されている色の場合は緑色の枠、そうでない場合はグレーの枠
+    const borderColor = isSelected ? "#4CAF50" : "#9E9E9E"
+    const borderWidth = isSelected ? "3px" : "2px"
 
-    // 駒の配置パターン（簡易的な実装）
+    // 駒の配置パターン（改良版）
     const positions = [
-      { x: 20, y: 20 },
-      { x: 60, y: 20 },
-      { x: 100, y: 20 },
-      { x: 20, y: 60 },
-      { x: 60, y: 60 },
-      { x: 100, y: 60 },
-      { x: 20, y: 100 },
-      { x: 60, y: 100 },
-      { x: 100, y: 100 },
+      { x: 15, y: 15 },
+      { x: 55, y: 15 },
+      { x: 95, y: 15 },
+      { x: 15, y: 55 },
+      { x: 55, y: 55 },
+      { x: 95, y: 55 },
+      { x: 15, y: 95 },
+      { x: 55, y: 95 },
+      { x: 95, y: 95 },
     ]
 
     for (let i = 0; i < count && i < positions.length; i++) {
@@ -185,7 +188,11 @@ export default function PieceTakingGame() {
             borderRadius: "50%",
             backgroundColor: pieceColor,
             boxShadow: "0 3px 5px rgba(0,0,0,0.3)",
+            border: "2px solid rgba(0,0,0,0.2)",
             transform: "perspective(100px) rotateX(30deg)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             "&::after": {
               content: '""',
               position: "absolute",
@@ -197,7 +204,7 @@ export default function PieceTakingGame() {
               backgroundColor: "rgba(255,255,255,0.3)",
             },
           }}
-        />,
+        />
       )
     }
 
@@ -207,11 +214,27 @@ export default function PieceTakingGame() {
           gridArea,
           position: "relative",
           height: 150,
-          border: `2px solid ${borderColor}`,
+          border: `${borderWidth} solid ${borderColor}`,
           backgroundColor: "rgba(200, 200, 220, 0.2)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        {pieces}
+        <Box sx={{ position: "relative", width: "100%", height: "100%" }}>{pieces}</Box>
+        <Typography
+          sx={{
+            position: "absolute",
+            bottom: -30,
+            color: "#333",
+            fontWeight: "bold",
+            backgroundColor: "rgba(255, 255, 255, 0.7)",
+            px: 2,
+            borderRadius: 1,
+          }}
+        >
+          {count}個
+        </Typography>
       </Box>
     )
   }
@@ -229,79 +252,26 @@ export default function PieceTakingGame() {
       }}
     >
       <Container maxWidth="md">
-        {/* ヘッダー部分 */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Button
-            component={Link}
-            to="/"
-            variant="outlined"
-            sx={{
-              borderRadius: 20,
-              backgroundColor: "white",
-              color: "black",
-              border: "2px solid #ccc",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              "&:hover": {
-                backgroundColor: "#f5f5f5",
-              },
-            }}
-          >
-            タイトルへ
-          </Button>
+        {/* ゲームルール説明 */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 2,
+            backgroundColor: "rgba(230, 230, 250, 0.9)",
+            borderRadius: 4,
+            textAlign: "center",
+            mb: 3,
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
+            ゲームのルール
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#333" }}>
+            3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います。<br />
+            最後の1個を取った方が負けです。
+          </Typography>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Paper
-              elevation={3}
-              sx={{
-                width: 50,
-                height: 50,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#3f51b5",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: 24,
-              }}
-            >
-              {gameState.bluePieces}
-            </Paper>
-
-            <Paper
-              elevation={3}
-              sx={{
-                width: 50,
-                height: 50,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f9a825",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: 24,
-              }}
-            >
-              {gameState.yellowPieces}
-            </Paper>
-
-            <Paper
-              elevation={3}
-              sx={{
-                width: 50,
-                height: 50,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f44336",
-                color: "white",
-                fontWeight: "bold",
-                fontSize: 24,
-              }}
-            >
-              {gameState.redPieces}
-            </Paper>
-          </Box>
-        </Box>
+        </Paper>
 
         {/* ゲームボード */}
         <Box
@@ -309,15 +279,15 @@ export default function PieceTakingGame() {
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",
             gap: 1,
-            mb: 3,
+            mb: 5,
             height: 150,
             backgroundColor: "#f5f5f5",
             boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
           }}
         >
-          {renderPieces("blue", gameState.bluePieces, "1 / 1 / 2 / 2")}
-          {renderPieces("yellow", gameState.yellowPieces, "1 / 2 / 2 / 3")}
-          {renderPieces("red", gameState.redPieces, "1 / 3 / 2 / 4")}
+          {renderPieces("blue", gameState.bluePieces, "1 / 1 / 2 / 2", gameState.selectedColor === "blue")}
+          {renderPieces("yellow", gameState.yellowPieces, "1 / 2 / 2 / 3", gameState.selectedColor === "yellow")}
+          {renderPieces("red", gameState.redPieces, "1 / 3 / 2 / 4", gameState.selectedColor === "red")}
         </Box>
 
         {/* コントロールパネル */}
@@ -331,6 +301,7 @@ export default function PieceTakingGame() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              mb: 3,
             }}
           >
             {gameState.currentTurn === "player" ? (
@@ -365,7 +336,7 @@ export default function PieceTakingGame() {
                     <ArrowDownward />
                   </IconButton>
 
-                  <Typography variant="h6" sx={{ mx: 2 }}>
+                  <Typography variant="h6" sx={{ mx: 2, color: "#333" }}>
                     から {gameState.selectedCount} 本取る
                   </Typography>
 
@@ -384,12 +355,12 @@ export default function PieceTakingGame() {
                   sx={{
                     borderRadius: 20,
                     px: 4,
-                    backgroundColor: "white",
-                    color: "black",
+                    backgroundColor: "#3f51b5",
+                    color: "#f0f0f0",
                     border: "2px solid #ccc",
                     boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                     "&:hover": {
-                      backgroundColor: "#f0f0f0",
+                      backgroundColor: "#303f9f",
                     },
                   }}
                 >
@@ -397,30 +368,53 @@ export default function PieceTakingGame() {
                 </Button>
               </>
             ) : (
-              <Typography variant="h6">AIの番です...</Typography>
+              <Typography variant="h6" sx={{ color: "#333" }}>
+                AIの番です...
+              </Typography>
             )}
           </Paper>
         ) : (
           <Paper
             elevation={3}
             sx={{
-              p: 3,
+              p: 2,
               backgroundColor: "rgba(230, 230, 250, 0.8)",
               borderRadius: 4,
               textAlign: "center",
+              mb: 3,
             }}
           >
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{ color: "#333" }}>
               ゲーム終了
             </Typography>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
               {gameState.winner === "player" ? "あなたの勝ちです！" : "AIの勝ちです"}
             </Typography>
-            <Button variant="contained" component={Link} to="/" sx={{ mt: 2 }}>
-              タイトルに戻る
-            </Button>
           </Paper>
         )}
+
+        {/* 下部のタイトルへボタン */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Button
+            component={Link}
+            to="/"
+            variant="outlined"
+            sx={{
+              borderRadius: 20,
+              backgroundColor: "#f5f5f5",
+              color: "#333",
+              border: "2px solid #ccc",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              px: 4,
+              py: 1,
+              "&:hover": {
+                backgroundColor: "#e0e0e0",
+              },
+            }}
+          >
+            タイトルへ
+          </Button>
+        </Box>
       </Container>
     </Box>
   )

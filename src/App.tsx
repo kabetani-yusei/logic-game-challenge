@@ -6,7 +6,7 @@ import PieceTakingGame from "./pages/PieceTakingGame"
 import StrangeOthello from "./pages/StrangeOthello"
 import ModMGame from "./pages/ModMGame"
 
-// Create a dark theme with custom colors to match the original design
+// テーマの設定を変更して、デフォルトのテキスト色を調整
 const theme = createTheme({
   palette: {
     mode: "dark",
@@ -19,6 +19,10 @@ const theme = createTheme({
     background: {
       default: "#121212",
       paper: "rgba(45, 45, 55, 0.8)",
+    },
+    text: {
+      primary: "#f5f5f5",
+      secondary: "#b0b0b0",
     },
   },
   typography: {
@@ -55,7 +59,7 @@ const theme = createTheme({
 
 interface GameCardProps {
   title: string
-  description: React.ReactNode
+  description: string
   to: string
 }
 
@@ -165,18 +169,13 @@ function HomePage() {
           <GameCardWrapper>
             <GameCard
               title="ストレンジオセロ"
-              description="通常とは違う初期盤面から始まるオセロ"
+              description="白黒の石を挟んで相手の石を自分の色に変える盤面ゲーム"
               to="/strange-othello"
             />
           </GameCardWrapper>
 
           <GameCardWrapper>
-            <GameCard title="mod Mゲーム" description={
-              <>
-                Mの倍数にならないように<br />
-                交互に数字を出し合うゲーム
-              </>
-            } to="/mod-m" />
+            <GameCard title="mod Mゲーム" description="数字を選んで倍数関係を作る数学的思考ゲーム" to="/mod-m" />
           </GameCardWrapper>
         </Box>
       </Container>
