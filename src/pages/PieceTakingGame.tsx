@@ -180,8 +180,8 @@ export default function PieceTakingGame() {
           newState.selectedColor === "blue"
             ? newState.bluePieces
             : newState.selectedColor === "yellow"
-            ? newState.yellowPieces
-            : newState.redPieces
+              ? newState.yellowPieces
+              : newState.redPieces
         newState.selectedCount = Math.min(newState.selectedCount, currentMax)
       }
       // プレイヤーが打ったので、前回のAIの手情報はクリア
@@ -200,35 +200,82 @@ export default function PieceTakingGame() {
         const yellow = newState.yellowPieces
         const red = newState.redPieces
 
-        // Nimの計算
+        // Nim の計算
         const nimSum = blue ^ yellow ^ red
 
-        if (nimSum !== 0) {
-          let moveFound = false
-          // 各色について最適な手が存在するかチェック
-          for (const color of ["blue", "yellow", "red"] as ("blue" | "yellow" | "red")[]) {
-            const pile = newState[`${color}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
-            const target = pile ^ nimSum
-            if (target < pile) {
-              const removal = pile - target
-              if (color === "blue") {
-                newState.bluePieces = pile - removal
-              } else if (color === "yellow") {
-                newState.yellowPieces = pile - removal
-              } else if (color === "red") {
-                newState.redPieces = pile - removal
+        // まず、残っている色（駒が残っている色）の一覧を取得
+        const available = getAvailableColorsFromState(newState)
+        let moveFound = false
+
+        // ①　残っている色が2種類の場合、かつどちらかの色が1個なら、もう片方の色をすべて取る
+        if (available.length === 2) {
+          for (const color of available) {
+            if (newState[`${color}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"] === 1) {
+              // もう一方の色を取得
+              const otherColor = available.find((c) => c !== color)!
+              const pile = newState[`${otherColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+              // すべて取る（その色の個数分 removal）
+              if (otherColor === "blue") {
+                newState.bluePieces = 0
+              } else if (otherColor === "yellow") {
+                newState.yellowPieces = 0
+              } else if (otherColor === "red") {
+                newState.redPieces = 0
               }
-              newState.selectedColor = color
-              newState.lastAIMove = { color, count: removal }
+              newState.selectedColor = otherColor
+              newState.lastAIMove = { color: otherColor, count: pile }
               moveFound = true
               break
             }
           }
-          // 最適な手が見つからなければランダムな手を行う（最大2個取る）
+        }
+        // ②　残っている色が1種類の場合、その色が2個以上あるなら「1個残して」すべて取る
+        else if (available.length === 1) {
+          const onlyColor = available[0]
+          const pile = newState[`${onlyColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+          if (pile > 1) {
+            const removal = pile - 1  // 1個残す
+            if (onlyColor === "blue") {
+              newState.bluePieces = 1
+            } else if (onlyColor === "yellow") {
+              newState.yellowPieces = 1
+            } else if (onlyColor === "red") {
+              newState.redPieces = 1
+            }
+            newState.selectedColor = onlyColor
+            newState.lastAIMove = { color: onlyColor, count: removal }
+            moveFound = true
+          }
+        }
+
+        // もし上記特別な手で moveFound が成立していなければ、従来の戦略に従う
+        if (!moveFound) {
+          if (nimSum !== 0) {
+            // Nim戦略：最適な手を探す
+            for (const color of ["blue", "yellow", "red"] as ("blue" | "yellow" | "red")[]) {
+              const pile = newState[`${color}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+              const target = pile ^ nimSum
+              if (target < pile) {
+                const removal = pile - target
+                if (color === "blue") {
+                  newState.bluePieces = pile - removal
+                } else if (color === "yellow") {
+                  newState.yellowPieces = pile - removal
+                } else if (color === "red") {
+                  newState.redPieces = pile - removal
+                }
+                newState.selectedColor = color
+                newState.lastAIMove = { color, count: removal }
+                moveFound = true
+                break
+              }
+            }
+          }
+          // nimSum が 0 か、最適な手が見つからなかった場合はランダムに手を決める（最大2個）
           if (!moveFound) {
-            const available = getAvailableColorsFromState(newState)
-            if (available.length > 0) {
-              const randomColor = available[Math.floor(Math.random() * available.length)]
+            const availableRandom = getAvailableColorsFromState(newState)
+            if (availableRandom.length > 0) {
+              const randomColor = availableRandom[Math.floor(Math.random() * availableRandom.length)]
               const pile = newState[`${randomColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
               const maxRemoval = Math.min(2, pile)
               const removal = Math.floor(Math.random() * maxRemoval) + 1
@@ -243,53 +290,35 @@ export default function PieceTakingGame() {
               newState.lastAIMove = { color: randomColor, count: removal }
             }
           }
-        } else {
-          // nimSum が 0 の場合は勝ち筋がないのでランダムに手を打つ（最大2個）
-          const available = getAvailableColorsFromState(newState)
-          if (available.length > 0) {
-            const randomColor = available[Math.floor(Math.random() * available.length)]
-            const pile = newState[`${randomColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
-            const maxRemoval = Math.min(2, pile)
-            const removal = Math.floor(Math.random() * maxRemoval) + 1
-            if (randomColor === "blue") {
-              newState.bluePieces = pile - removal
-            } else if (randomColor === "yellow") {
-              newState.yellowPieces = pile - removal
-            } else if (randomColor === "red") {
-              newState.redPieces = pile - removal
-            }
-            newState.selectedColor = randomColor
-            newState.lastAIMove = { color: randomColor, count: removal }
-          }
         }
 
-        // AIが手を打った後、盤面が空ならプレイヤーの勝ち（最後の1個を取った方が負け）
+        // AI が手を打った後、盤面が空ならプレイヤーの勝ち（最後の1個を取った方が負け）
         if (newState.bluePieces + newState.yellowPieces + newState.redPieces === 0) {
           newState.gameOver = true
           newState.winner = "player"
         } else {
-          const available = getAvailableColorsFromState(newState)
-          if (!available.includes(newState.selectedColor)) {
-            newState.selectedColor = available.length > 0 ? available[0] : newState.selectedColor
-            newState.selectedCount = available.length > 0 ? 1 : 0
+          const availableAfter = getAvailableColorsFromState(newState)
+          if (!availableAfter.includes(newState.selectedColor)) {
+            newState.selectedColor = availableAfter.length > 0 ? availableAfter[0] : newState.selectedColor
+            newState.selectedCount = availableAfter.length > 0 ? 1 : 0
           } else {
             const currentMax =
               newState.selectedColor === "blue"
                 ? newState.bluePieces
                 : newState.selectedColor === "yellow"
-                ? newState.yellowPieces
-                : newState.redPieces
+                  ? newState.yellowPieces
+                  : newState.redPieces
             newState.selectedCount = Math.min(newState.selectedCount, currentMax)
           }
         }
 
         newState.currentTurn = "player"
         updateGameState(newState)
-      }, 1000)
-
+      }, 500)
       return () => clearTimeout(aiTimer)
     }
   }, [gameState])
+
 
   // 1手戻る処理：プレイヤーの手を戻すため、直近の2手（AIの手とその前のプレイヤーの手）を取り除く
   const undoLastMove = () => {
@@ -364,7 +393,7 @@ export default function PieceTakingGame() {
         sx={{
           gridArea,
           position: "relative",
-          height: 150,
+          height: 130,
           border: `${borderWidth} solid ${borderColor}`,
           backgroundColor: "rgba(200, 200, 220, 0.2)",
           display: "flex",
@@ -409,9 +438,9 @@ export default function PieceTakingGame() {
           sx={{
             p: 2,
             backgroundColor: "rgba(230, 230, 250, 0.9)",
-            borderRadius: 4,
+            borderRadius: 2,
             textAlign: "center",
-            mb: 3,
+            mb: 2,
           }}
         >
           <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
@@ -430,7 +459,7 @@ export default function PieceTakingGame() {
             gridTemplateColumns: "1fr 1fr 1fr",
             gap: 1,
             mb: 5,
-            height: 150,
+            height: 130,
             backgroundColor: "#f5f5f5",
             boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
           }}
@@ -477,8 +506,8 @@ export default function PieceTakingGame() {
                         gameState.selectedColor === "blue"
                           ? "#3f51b5"
                           : gameState.selectedColor === "yellow"
-                          ? "#f9a825"
-                          : "#f44336",
+                            ? "#f9a825"
+                            : "#f44336",
                       mx: 2,
                     }}
                   />
@@ -533,6 +562,11 @@ export default function PieceTakingGame() {
                       boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                       "&:hover": {
                         backgroundColor: "#f5f5f5",
+                      },
+                      "&.Mui-disabled": {
+                        // 無効状態でもテキストが薄く表示されるように設定
+                        opacity: 0.5,
+                        color: "#333",
                       },
                     }}
                     disabled={history.length < 2}
