@@ -30,9 +30,9 @@ export default function PieceTakingGame() {
     winner: null,
   })
 
-  // 選択された色に基づいて、選択可能な駒の数を取得
-  const getMaxSelectableCount = () => {
-    switch (gameState.selectedColor) {
+  // 指定した色の残り個数を返すヘルパー関数
+  const getCountForColor = (color: "blue" | "yellow" | "red") => {
+    switch (color) {
       case "blue":
         return gameState.bluePieces
       case "yellow":
@@ -44,26 +44,61 @@ export default function PieceTakingGame() {
     }
   }
 
-  // 色を選択する関数
+  // 現在の色に対する選択可能な駒の数を取得
+  const getMaxSelectableCount = () => {
+    return getCountForColor(gameState.selectedColor)
+  }
+
+  // stateから、駒の残りが1個以上ある色の配列を返す（AI用にも利用）
+  const getAvailableColorsFromState = (state: GameState): ("blue" | "yellow" | "red")[] => {
+    const colors: ("blue" | "yellow" | "red")[] = []
+    if (state.bluePieces > 0) colors.push("blue")
+    if (state.yellowPieces > 0) colors.push("yellow")
+    if (state.redPieces > 0) colors.push("red")
+    return colors
+  }
+
+  // 利用可能な色（駒の残りが1個以上あるもの）の配列を取得（プレイヤー用）
+  const getAvailableColors = (): ("blue" | "yellow" | "red")[] => {
+    return getAvailableColorsFromState(gameState)
+  }
+
+  // 次の利用可能な色に切り替える
   const selectNextColor = () => {
     const colors: ("blue" | "yellow" | "red")[] = ["blue", "yellow", "red"]
-    const currentIndex = colors.indexOf(gameState.selectedColor)
-    const nextIndex = (currentIndex + 1) % colors.length
+    let index = colors.indexOf(gameState.selectedColor)
+    let newColor = gameState.selectedColor
+    // 色の数だけループして、個数が0でない色を探す
+    for (let i = 0; i < colors.length; i++) {
+      index = (index + 1) % colors.length
+      if (getCountForColor(colors[index]) > 0) {
+        newColor = colors[index]
+        break
+      }
+    }
     setGameState({
       ...gameState,
-      selectedColor: colors[nextIndex],
-      selectedCount: Math.min(1, getMaxSelectableCount()),
+      selectedColor: newColor,
+      selectedCount: getCountForColor(newColor) > 0 ? 1 : 0,
     })
   }
 
+  // 前の利用可能な色に切り替える
   const selectPrevColor = () => {
     const colors: ("blue" | "yellow" | "red")[] = ["blue", "yellow", "red"]
-    const currentIndex = colors.indexOf(gameState.selectedColor)
-    const nextIndex = (currentIndex - 1 + colors.length) % colors.length
+    let index = colors.indexOf(gameState.selectedColor)
+    let newColor = gameState.selectedColor
+    for (let i = 0; i < colors.length; i++) {
+      index = (index - 1 + colors.length) % colors.length
+      if (getCountForColor(colors[index]) > 0) {
+        newColor = colors[index]
+        break
+      }
+    }
     setGameState({
       ...gameState,
-      selectedColor: colors[nextIndex],
-      selectedCount: Math.min(1, getMaxSelectableCount()),
+      selectedColor: newColor,
+      selectedCount: getCountForColor(newColor) > 0 ? 1 : 0,
     })
   }
 
@@ -88,64 +123,88 @@ export default function PieceTakingGame() {
     }
   }
 
-  // プレイヤーの手を確定する
+  // プレイヤーの手を確定する関数（変更箇所のみ抜粋）
   const confirmPlayerMove = () => {
-    // 選択された色と数に基づいて駒を取る
     const newState = { ...gameState }
 
     switch (gameState.selectedColor) {
       case "blue":
-        newState.bluePieces -= gameState.selectedCount
+        newState.bluePieces = Math.max(newState.bluePieces - gameState.selectedCount, 0)
         break
       case "yellow":
-        newState.yellowPieces -= gameState.selectedCount
+        newState.yellowPieces = Math.max(newState.yellowPieces - gameState.selectedCount, 0)
         break
       case "red":
-        newState.redPieces -= gameState.selectedCount
+        newState.redPieces = Math.max(newState.redPieces - gameState.selectedCount, 0)
         break
     }
-
-    // ターンを切り替える
     newState.currentTurn = "ai"
 
-    // ゲーム終了判定
+    // 盤面が空になった場合、プレイヤーが最後の駒を取ったので負け（AIの勝ち）
     if (newState.bluePieces + newState.yellowPieces + newState.redPieces === 0) {
       newState.gameOver = true
-      newState.winner = "player"
+      newState.winner = "ai"
+    } else {
+      // 現在の選択色が使えなくなっていたら、有効な色に切り替え
+      const available = getAvailableColorsFromState(newState)
+      if (!available.includes(newState.selectedColor)) {
+        newState.selectedColor = available.length > 0 ? available[0] : newState.selectedColor
+        newState.selectedCount = available.length > 0 ? 1 : 0
+      } else {
+        const currentMax =
+          newState.selectedColor === "blue"
+            ? newState.bluePieces
+            : newState.selectedColor === "yellow"
+              ? newState.yellowPieces
+              : newState.redPieces
+        newState.selectedCount = Math.min(newState.selectedCount, currentMax)
+      }
     }
 
     setGameState(newState)
   }
 
-  // AIの手番を処理
+
+  // AIの手番処理（変更箇所のみ抜粋）
   useEffect(() => {
     if (gameState.currentTurn === "ai" && !gameState.gameOver) {
-      // 少し遅延を入れてAIの思考時間を演出
       const aiTimer = setTimeout(() => {
-        // 簡単なAIロジック：残っている駒がある色から1つ取る
         const newState = { ...gameState }
 
+        // 残っている駒がある最初の色から1個取る
         if (newState.bluePieces > 0) {
-          newState.bluePieces -= 1
+          newState.bluePieces = Math.max(newState.bluePieces - 1, 0)
           newState.selectedColor = "blue"
         } else if (newState.yellowPieces > 0) {
-          newState.yellowPieces -= 1
+          newState.yellowPieces = Math.max(newState.yellowPieces - 1, 0)
           newState.selectedColor = "yellow"
         } else if (newState.redPieces > 0) {
-          newState.redPieces -= 1
+          newState.redPieces = Math.max(newState.redPieces - 1, 0)
           newState.selectedColor = "red"
         }
 
-        // ターンを切り替える
-        newState.currentTurn = "player"
-        newState.selectedCount = 1
-
-        // ゲーム終了判定
+        // 盤面が空の場合、AIが最後の駒を取ったので負け（プレイヤーの勝ち）
         if (newState.bluePieces + newState.yellowPieces + newState.redPieces === 0) {
           newState.gameOver = true
-          newState.winner = "ai"
+          newState.winner = "player"
+        } else {
+          // AIの手番で駒を取った後、現在の選択色が使えなくなっていたら自動で切り替え
+          const available = getAvailableColorsFromState(newState)
+          if (!available.includes(newState.selectedColor)) {
+            newState.selectedColor = available.length > 0 ? available[0] : newState.selectedColor
+            newState.selectedCount = available.length > 0 ? 1 : 0
+          } else {
+            const currentMax =
+              newState.selectedColor === "blue"
+                ? newState.bluePieces
+                : newState.selectedColor === "yellow"
+                  ? newState.yellowPieces
+                  : newState.redPieces
+            newState.selectedCount = Math.min(newState.selectedCount, currentMax)
+          }
         }
 
+        newState.currentTurn = "player"
         setGameState(newState)
       }, 1000)
 
@@ -153,16 +212,14 @@ export default function PieceTakingGame() {
     }
   }, [gameState])
 
+
   // 駒を描画する関数
-  // 変更点: 各駒内から「駒」と表示するTypography要素を削除
   const renderPieces = (color: string, count: number, gridArea: string, isSelected: boolean) => {
     const pieces = []
     const pieceColor = color === "blue" ? "#3f51b5" : color === "yellow" ? "#f9a825" : "#f44336"
-    // 選択されている色の場合は緑色の枠、そうでない場合はグレーの枠
     const borderColor = isSelected ? "#4CAF50" : "#9E9E9E"
     const borderWidth = isSelected ? "3px" : "2px"
 
-    // 駒の配置パターン（改良版）
     const positions = [
       { x: 15, y: 15 },
       { x: 55, y: 15 },
@@ -270,7 +327,6 @@ export default function PieceTakingGame() {
             3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います。<br />
             最後の1個を取った方が負けです。
           </Typography>
-
         </Paper>
 
         {/* ゲームボード */}
@@ -340,11 +396,7 @@ export default function PieceTakingGame() {
                     から {gameState.selectedCount} 本取る
                   </Typography>
 
-                  <IconButton
-                    onClick={increaseCount}
-                    color="primary"
-                    disabled={gameState.selectedCount >= getMaxSelectableCount()}
-                  >
+                  <IconButton onClick={increaseCount} color="primary" disabled={gameState.selectedCount >= getMaxSelectableCount()}>
                     <ArrowUpward />
                   </IconButton>
                 </Box>
@@ -393,7 +445,7 @@ export default function PieceTakingGame() {
           </Paper>
         )}
 
-        {/* 下部のタイトルへボタン */}
+        {/* タイトルへ戻るボタン */}
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <Button
             component={Link}
