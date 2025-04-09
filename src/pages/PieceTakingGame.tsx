@@ -5,6 +5,12 @@ import { Box, Typography, Button, Paper, Container, IconButton } from "@mui/mate
 import { ArrowUpward, ArrowDownward, ArrowBack, ArrowForward } from "@mui/icons-material"
 import { Link } from "react-router-dom"
 
+// AIの手の情報を定義
+interface AIMove {
+  color: "blue" | "yellow" | "red"
+  count: number
+}
+
 // ゲームの状態を定義
 interface GameState {
   bluePieces: number
@@ -15,6 +21,7 @@ interface GameState {
   selectedCount: number
   gameOver: boolean
   winner: "player" | "ai" | null
+  lastAIMove: AIMove | null
 }
 
 export default function PieceTakingGame() {
@@ -28,7 +35,24 @@ export default function PieceTakingGame() {
     selectedCount: 1,
     gameOver: false,
     winner: null,
+    lastAIMove: null,
   })
+
+  // 過去の状態を記録しておく history（プレイヤーの手とAIの手のペアで保存）
+  const [history, setHistory] = useState<GameState[]>([])
+
+  // 色の表示名マッピング（"blue"→"青色"、"yellow"→"黄色"、"red"→"赤色"）
+  const colorNames: Record<"blue" | "yellow" | "red", string> = {
+    blue: "青色",
+    yellow: "黄色",
+    red: "赤色",
+  }
+
+  // ゲーム状態を更新する際、現在の状態を history に積んでから更新する
+  const updateGameState = (newState: GameState) => {
+    setHistory(prev => [...prev, gameState])
+    setGameState(newState)
+  }
 
   // 指定した色の残り個数を返すヘルパー関数
   const getCountForColor = (color: "blue" | "yellow" | "red") => {
@@ -49,7 +73,7 @@ export default function PieceTakingGame() {
     return getCountForColor(gameState.selectedColor)
   }
 
-  // stateから、駒の残りが1個以上ある色の配列を返す（AI用にも利用）
+  // stateから、駒の残りが1個以上ある色の配列を返す
   const getAvailableColorsFromState = (state: GameState): ("blue" | "yellow" | "red")[] => {
     const colors: ("blue" | "yellow" | "red")[] = []
     if (state.bluePieces > 0) colors.push("blue")
@@ -58,7 +82,7 @@ export default function PieceTakingGame() {
     return colors
   }
 
-  // 利用可能な色（駒の残りが1個以上あるもの）の配列を取得（プレイヤー用）
+  // 利用可能な色（駒の残りが1個以上あるもの）の配列を取得
   const getAvailableColors = (): ("blue" | "yellow" | "red")[] => {
     return getAvailableColorsFromState(gameState)
   }
@@ -123,7 +147,7 @@ export default function PieceTakingGame() {
     }
   }
 
-  // プレイヤーの手を確定する関数（変更箇所のみ抜粋）
+  // プレイヤーの手を確定する
   const confirmPlayerMove = () => {
     const newState = { ...gameState }
 
@@ -140,7 +164,8 @@ export default function PieceTakingGame() {
     }
     newState.currentTurn = "ai"
 
-    // 盤面が空になった場合、プレイヤーが最後の駒を取ったので負け（AIの勝ち）
+    // 最後の1個を取った方が負けルールの場合
+    // 盤面が空になったら、プレイヤーが手を打ったのでAIの勝ちとする
     if (newState.bluePieces + newState.yellowPieces + newState.redPieces === 0) {
       newState.gameOver = true
       newState.winner = "ai"
@@ -155,40 +180,94 @@ export default function PieceTakingGame() {
           newState.selectedColor === "blue"
             ? newState.bluePieces
             : newState.selectedColor === "yellow"
-              ? newState.yellowPieces
-              : newState.redPieces
+            ? newState.yellowPieces
+            : newState.redPieces
         newState.selectedCount = Math.min(newState.selectedCount, currentMax)
       }
+      // プレイヤーが打ったので、前回のAIの手情報はクリア
+      newState.lastAIMove = null
     }
 
-    setGameState(newState)
+    updateGameState(newState)
   }
 
-
-  // AIの手番処理（変更箇所のみ抜粋）
+  // AIの手番を処理（AIはNim戦略を使って最善手を打ち、最善手が存在しない場合はランダムに取る（最大2個））
   useEffect(() => {
     if (gameState.currentTurn === "ai" && !gameState.gameOver) {
       const aiTimer = setTimeout(() => {
         const newState = { ...gameState }
+        const blue = newState.bluePieces
+        const yellow = newState.yellowPieces
+        const red = newState.redPieces
 
-        // 残っている駒がある最初の色から1個取る
-        if (newState.bluePieces > 0) {
-          newState.bluePieces = Math.max(newState.bluePieces - 1, 0)
-          newState.selectedColor = "blue"
-        } else if (newState.yellowPieces > 0) {
-          newState.yellowPieces = Math.max(newState.yellowPieces - 1, 0)
-          newState.selectedColor = "yellow"
-        } else if (newState.redPieces > 0) {
-          newState.redPieces = Math.max(newState.redPieces - 1, 0)
-          newState.selectedColor = "red"
+        // Nimの計算
+        const nimSum = blue ^ yellow ^ red
+
+        if (nimSum !== 0) {
+          let moveFound = false
+          // 各色について最適な手が存在するかチェック
+          for (const color of ["blue", "yellow", "red"] as ("blue" | "yellow" | "red")[]) {
+            const pile = newState[`${color}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+            const target = pile ^ nimSum
+            if (target < pile) {
+              const removal = pile - target
+              if (color === "blue") {
+                newState.bluePieces = pile - removal
+              } else if (color === "yellow") {
+                newState.yellowPieces = pile - removal
+              } else if (color === "red") {
+                newState.redPieces = pile - removal
+              }
+              newState.selectedColor = color
+              newState.lastAIMove = { color, count: removal }
+              moveFound = true
+              break
+            }
+          }
+          // 最適な手が見つからなければランダムな手を行う（最大2個取る）
+          if (!moveFound) {
+            const available = getAvailableColorsFromState(newState)
+            if (available.length > 0) {
+              const randomColor = available[Math.floor(Math.random() * available.length)]
+              const pile = newState[`${randomColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+              const maxRemoval = Math.min(2, pile)
+              const removal = Math.floor(Math.random() * maxRemoval) + 1
+              if (randomColor === "blue") {
+                newState.bluePieces = pile - removal
+              } else if (randomColor === "yellow") {
+                newState.yellowPieces = pile - removal
+              } else if (randomColor === "red") {
+                newState.redPieces = pile - removal
+              }
+              newState.selectedColor = randomColor
+              newState.lastAIMove = { color: randomColor, count: removal }
+            }
+          }
+        } else {
+          // nimSum が 0 の場合は勝ち筋がないのでランダムに手を打つ（最大2個）
+          const available = getAvailableColorsFromState(newState)
+          if (available.length > 0) {
+            const randomColor = available[Math.floor(Math.random() * available.length)]
+            const pile = newState[`${randomColor}Pieces` as "bluePieces" | "yellowPieces" | "redPieces"]
+            const maxRemoval = Math.min(2, pile)
+            const removal = Math.floor(Math.random() * maxRemoval) + 1
+            if (randomColor === "blue") {
+              newState.bluePieces = pile - removal
+            } else if (randomColor === "yellow") {
+              newState.yellowPieces = pile - removal
+            } else if (randomColor === "red") {
+              newState.redPieces = pile - removal
+            }
+            newState.selectedColor = randomColor
+            newState.lastAIMove = { color: randomColor, count: removal }
+          }
         }
 
-        // 盤面が空の場合、AIが最後の駒を取ったので負け（プレイヤーの勝ち）
+        // AIが手を打った後、盤面が空ならプレイヤーの勝ち（最後の1個を取った方が負け）
         if (newState.bluePieces + newState.yellowPieces + newState.redPieces === 0) {
           newState.gameOver = true
           newState.winner = "player"
         } else {
-          // AIの手番で駒を取った後、現在の選択色が使えなくなっていたら自動で切り替え
           const available = getAvailableColorsFromState(newState)
           if (!available.includes(newState.selectedColor)) {
             newState.selectedColor = available.length > 0 ? available[0] : newState.selectedColor
@@ -198,20 +277,35 @@ export default function PieceTakingGame() {
               newState.selectedColor === "blue"
                 ? newState.bluePieces
                 : newState.selectedColor === "yellow"
-                  ? newState.yellowPieces
-                  : newState.redPieces
+                ? newState.yellowPieces
+                : newState.redPieces
             newState.selectedCount = Math.min(newState.selectedCount, currentMax)
           }
         }
 
         newState.currentTurn = "player"
-        setGameState(newState)
+        updateGameState(newState)
       }, 1000)
 
       return () => clearTimeout(aiTimer)
     }
   }, [gameState])
 
+  // 1手戻る処理：プレイヤーの手を戻すため、直近の2手（AIの手とその前のプレイヤーの手）を取り除く
+  const undoLastMove = () => {
+    setHistory(prev => {
+      if (prev.length < 2) return prev
+      const newHistory = [...prev]
+      // まず直近のAIの手を取り除く
+      newHistory.pop()
+      // 次にプレイヤーの手を取り除き、その状態に戻す
+      const lastState = newHistory.pop()
+      if (lastState) {
+        setGameState(lastState)
+      }
+      return newHistory
+    })
+  }
 
   // 駒を描画する関数
   const renderPieces = (color: string, count: number, gridArea: string, isSelected: boolean) => {
@@ -346,6 +440,13 @@ export default function PieceTakingGame() {
           {renderPieces("red", gameState.redPieces, "1 / 3 / 2 / 4", gameState.selectedColor === "red")}
         </Box>
 
+        {/* AIの手の情報表示 */}
+        {gameState.lastAIMove && (
+          <Typography variant="subtitle1" color="secondary" sx={{ mb: 1, textAlign: "center" }}>
+            AIの手: {colorNames[gameState.lastAIMove.color]}から {gameState.lastAIMove.count} 個取りました
+          </Typography>
+        )}
+
         {/* コントロールパネル */}
         {!gameState.gameOver ? (
           <Paper
@@ -376,8 +477,8 @@ export default function PieceTakingGame() {
                         gameState.selectedColor === "blue"
                           ? "#3f51b5"
                           : gameState.selectedColor === "yellow"
-                            ? "#f9a825"
-                            : "#f44336",
+                          ? "#f9a825"
+                          : "#f44336",
                       mx: 2,
                     }}
                   />
@@ -401,23 +502,44 @@ export default function PieceTakingGame() {
                   </IconButton>
                 </Box>
 
-                <Button
-                  variant="contained"
-                  onClick={confirmPlayerMove}
-                  sx={{
-                    borderRadius: 20,
-                    px: 4,
-                    backgroundColor: "#3f51b5",
-                    color: "#f0f0f0",
-                    border: "2px solid #ccc",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                    "&:hover": {
-                      backgroundColor: "#303f9f",
-                    },
-                  }}
-                >
-                  決定
-                </Button>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    onClick={confirmPlayerMove}
+                    sx={{
+                      borderRadius: 20,
+                      px: 4,
+                      backgroundColor: "#3f51b5",
+                      color: "#f0f0f0",
+                      border: "2px solid #ccc",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      "&:hover": {
+                        backgroundColor: "#303f9f",
+                      },
+                    }}
+                  >
+                    決定
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    onClick={undoLastMove}
+                    sx={{
+                      borderRadius: 20,
+                      px: 4,
+                      backgroundColor: "#fff",
+                      color: "#333",
+                      border: "2px solid #ccc",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                      },
+                    }}
+                    disabled={history.length < 2}
+                  >
+                    1手戻る
+                  </Button>
+                </Box>
               </>
             ) : (
               <Typography variant="h6" sx={{ color: "#333" }}>
@@ -446,7 +568,7 @@ export default function PieceTakingGame() {
         )}
 
         {/* タイトルへ戻るボタン */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2 }}>
           <Button
             component={Link}
             to="/"
