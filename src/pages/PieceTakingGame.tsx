@@ -82,11 +82,6 @@ export default function PieceTakingGame() {
     return colors
   }
 
-  // 利用可能な色（駒の残りが1個以上あるもの）の配列を取得
-  const getAvailableColors = (): ("blue" | "yellow" | "red")[] => {
-    return getAvailableColorsFromState(gameState)
-  }
-
   // 次の利用可能な色に切り替える
   const selectNextColor = () => {
     const colors: ("blue" | "yellow" | "red")[] = ["blue", "yellow", "red"]
