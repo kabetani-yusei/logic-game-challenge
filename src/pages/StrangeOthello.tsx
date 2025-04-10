@@ -371,85 +371,111 @@ export default function StrangeOthello() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(to bottom, #e0e0e0, #b0c4de)",
-        p: 2,
+        justifyContent: "flex-start",
+        background: "linear-gradient(135deg, #e0e0e0 0%, #b0c4de 50%, #d1c4e9 100%)",
+        p: 1,
+        pt: 2,
       }}
     >
-      <Container maxWidth="sm">
-        {/* ゲームルール説明 */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 2,
-            backgroundColor: "rgba(230, 230, 250, 0.9)",
-            borderRadius: 4,
-            textAlign: "center",
-            mb: 3,
-          }}
-        >
-          <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
-            ゲームのルール
+      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* ゲームタイトルとルール説明を縦並びに */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {/* ゲームタイトル */}
+          <Typography
+            variant="h5"
+            component="h1"
+            sx={{
+              color: "#303f9f",
+              fontWeight: "bold",
+              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+              textAlign: "center",
+            }}
+          >
+            ストレンジオセロ
           </Typography>
-          <Typography variant="body1" sx={{ color: "#333" }}>
-            挟んだ駒は自分の色にできます。最終的な数が多い方が勝ちです。
-          </Typography>
-        </Paper>
 
-        {/* ヘッダー部分 */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 2 }}>
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  backgroundColor: "#3f51b5", // プレイヤーの色（青）
-                }}
-              />
-              <Typography variant="h6" sx={{ color: "#333" }}>
-                {gameState.playerScore}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  backgroundColor: "#f5f5f5", // AIの色（白）
-                  border: "1px solid #ccc",
-                }}
-              />
-              <Typography variant="h6" sx={{ color: "#333" }}>
-                {gameState.aiScore}
-              </Typography>
-            </Box>
-          </Box>
+          {/* ゲームルール説明 */}
+          <Paper
+            elevation={2}
+            sx={{
+              p: 1.5,
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "8px",
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.4 }}>
+              挟んだ駒は自分の色にできます。最終的な数が多い方が勝ちです。
+              初期配置は通常のオセロとは異なり、特殊な配置になっています。
+            </Typography>
+          </Paper>
         </Box>
 
-        {/* ゲームボード - Gridを使わずにflexboxで実装 */}
+        {/* ゲーム情報 */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 1.5,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            borderRadius: "8px",
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" sx={{ color: "#333", fontWeight: "medium" }}>
+              {gameState.currentTurn === "player" ? "あなたの番です" : "AIの番です..."}
+            </Typography>
+
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    backgroundColor: "#3f51b5", // プレイヤーの色（青）
+                  }}
+                />
+                <Typography variant="body2" sx={{ color: "#333" }}>
+                  {gameState.playerScore}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    backgroundColor: "#f5f5f5", // AIの色（白）
+                    border: "1px solid #ccc",
+                  }}
+                />
+                <Typography variant="body2" sx={{ color: "#333" }}>
+                  {gameState.aiScore}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* ゲームボード */}
         <Paper
           elevation={3}
           sx={{
             p: 2,
-            backgroundColor: "#add8e6", // 薄い青色の背景
-            borderRadius: 2,
-            mb: 3,
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            borderRadius: "8px",
           }}
         >
           <Box
@@ -474,8 +500,8 @@ export default function StrangeOthello() {
                       width: "16.666%", // 6x6のボードなので各セルは幅の1/6
                       paddingTop: "16.666%", // アスペクト比を1:1に保つ
                       position: "relative",
-                      backgroundColor: "#f5f5f5",
-                      border: "1px solid #ccc",
+                      backgroundColor: "#add8e6", // 薄い青色の背景
+                      border: "1px solid #90caf9",
                       cursor: gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                         ? "pointer"
                         : "default",
@@ -483,8 +509,8 @@ export default function StrangeOthello() {
                         backgroundColor: gameState.validMoves.some(
                           (move) => move.row === rowIndex && move.col === colIndex,
                         )
-                          ? "#e0e0e0"
-                          : "#f5f5f5",
+                          ? "#90caf9"
+                          : "#add8e6",
                       },
                       // 有効な手の場合、薄い色で表示
                       ...(gameState.currentTurn === "player" &&
@@ -527,74 +553,86 @@ export default function StrangeOthello() {
           </Box>
         </Paper>
 
-        {/* ゲーム情報 */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 2,
-            backgroundColor: "rgba(230, 230, 250, 0.8)",
-            borderRadius: 4,
-            textAlign: "center",
-            mb: 3,
-          }}
-        >
-          {gameState.gameOver ? (
-            <>
-              <Typography variant="h5" gutterBottom sx={{ color: "#333" }}>
-                ゲーム終了
-              </Typography>
-              <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
-                {gameState.winner === "player"
-                  ? "あなたの勝ちです！"
-                  : gameState.winner === "ai"
-                    ? "AIの勝ちです"
-                    : "引き分けです"}
-              </Typography>
-              <Button
-                variant="contained"
-                component={Link}
-                to="/"
-                sx={{
-                  mt: 2,
-                  backgroundColor: "#3f51b5",
-                  color: "#f0f0f0",
-                  "&:hover": {
-                    backgroundColor: "#303f9f",
-                  },
-                }}
-              >
-                タイトルに戻る
-              </Button>
-            </>
-          ) : (
-            <Typography variant="h6" sx={{ color: "#333" }}>
-              {gameState.currentTurn === "player" ? "あなたの番です" : "AIの番です..."}
-            </Typography>
-          )}
-        </Paper>
-
-        {/* タイトルへボタン - 下部に移動 */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-          <Button
-            component={Link}
-            to="/"
-            variant="outlined"
+        {/* ゲーム終了時の結果表示 */}
+        {gameState.gameOver && (
+          <Paper
+            elevation={3}
             sx={{
-              borderRadius: 20,
-              backgroundColor: "#f5f5f5",
-              color: "#333",
-              border: "2px solid #ccc",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              px: 4,
-              py: 1,
-              "&:hover": {
-                backgroundColor: "#e0e0e0",
-              },
+              p: 2,
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              borderRadius: "8px",
+              textAlign: "center",
             }}
           >
-            タイトルへ
-          </Button>
-        </Box>
+            <Typography variant="h6" gutterBottom sx={{ color: "#333", fontWeight: "bold" }}>
+              ゲーム終了
+            </Typography>
+            <Typography
+              variant="body1"
+              gutterBottom
+              sx={{
+                color: gameState.winner === "player" ? "#4caf50" : gameState.winner === "ai" ? "#f44336" : "#ff9800",
+                fontWeight: "medium",
+                mb: 2,
+                p: 1,
+                backgroundColor:
+                  gameState.winner === "player"
+                    ? "rgba(76, 175, 80, 0.1)"
+                    : gameState.winner === "ai"
+                      ? "rgba(244, 67, 54, 0.1)"
+                      : "rgba(255, 152, 0, 0.1)",
+                borderRadius: "6px",
+                display: "inline-block",
+              }}
+            >
+              {gameState.winner === "player"
+                ? "あなたの勝ちです！"
+                : gameState.winner === "ai"
+                  ? "AIの勝ちです"
+                  : "引き分けです"}
+            </Typography>
+            <Button
+              variant="contained"
+              component={Link}
+              to="/"
+              size="small"
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.8,
+                backgroundColor: "#3f51b5",
+                color: "#fff",
+                fontWeight: "bold",
+                boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+              }}
+            >
+              タイトルに戻る
+            </Button>
+          </Paper>
+        )}
+
+        {/* タイトルへ戻るボタン */}
+        {!gameState.gameOver && (
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Button
+              component={Link}
+              to="/"
+              variant="outlined"
+              size="small"
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.5,
+                color: "#555",
+                borderColor: "#ccc",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                fontSize: "0.8rem",
+              }}
+            >
+              タイトルへ
+            </Button>
+          </Box>
+        )}
       </Container>
     </Box>
   )
