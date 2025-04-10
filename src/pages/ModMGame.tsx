@@ -6,21 +6,24 @@ import { Link } from "react-router-dom"
 
 // ゲームの状態を表す型
 interface GameState {
-  n: number             // カードの最大値
-  m: number             // 割る数
-  playerCards: number[] // プレイヤー（Alice）の手札
+  n: number             // カードの最大値 (固定: 5)
+  m: number             // 割る数 (固定: 9)
+  playerCards: number[] // プレイヤー（あなた）の手札
   aiCards: number[]     // AI の手札
   playedCards: number[] // 場に出されたカード
   sum: number           // 場に出されたカードの合計
   currentTurn: "player" | "ai" // 現在の手番
   gameOver: boolean     // ゲーム終了フラグ
   winner: "player" | "ai" | null // 勝者
-  message: string       // ゲームメッセージ
+  message: string       // 現在のターンメッセージやゲームのメッセージ
+  lastMove: string      // 前回のカード出しの記録
 }
 
 export default function ModMGame() {
-  // ゲームの初期状態を設定する関数（デフォルトは N=5, M=7）
-  const initializeGame = (n = 5, m = 7): GameState => {
+  // ゲームの初期状態（N=5, M=9 固定、プレイヤーは後手、AIから行動）
+  const initializeGame = (): GameState => {
+    const n = 5;
+    const m = 9;
     const playerCards = Array.from({ length: n }, (_, i) => i + 1)
     const aiCards = Array.from({ length: n }, (_, i) => i + 1)
 
@@ -31,18 +34,24 @@ export default function ModMGame() {
       aiCards,
       playedCards: [],
       sum: 0,
-      currentTurn: "player",
+      currentTurn: "ai", // AI が最初の手番
       gameOver: false,
       winner: null,
-      message: "あなたのターンです。カードを選んでください。"
+      message: "AIのターンです...",
+      lastMove: ""
     }
   }
 
-  // ゲームの状態管理
+  // 現在のゲーム状態管理
   const [gameState, setGameState] = useState<GameState>(initializeGame())
+  // 各ムーブの状態を記録する履歴状態
+  const [history, setHistory] = useState<GameState[]>([])
 
-  // カードをプレイした後の状態更新関数
+  // カードを出した後の状態更新関数
   const playCard = (card: number, player: "player" | "ai") => {
+    // 現在の状態を履歴に保存
+    setHistory(prev => [...prev, gameState])
+
     const newState = { ...gameState }
 
     // 選んだカードを手札から削除
@@ -56,7 +65,13 @@ export default function ModMGame() {
     newState.playedCards = [...newState.playedCards, card]
     newState.sum += card
 
-    // 直後に、場の合計が M で割り切れる場合は直前にカードを出した人の負け
+    // 前回の手の記録を更新する
+    newState.lastMove =
+      player === "player"
+        ? `あなたは ${card} を出しました。`
+        : `AIは ${card} を出しました。`
+
+    // カードを出した時に合計が9の倍数になったら、出した側の負け
     if (newState.sum % newState.m === 0) {
       newState.gameOver = true
       newState.winner = player === "player" ? "ai" : "player"
@@ -65,29 +80,31 @@ export default function ModMGame() {
           ? "あなたの勝ちです！合計が" + newState.m + "の倍数になりました。"
           : "AIの勝ちです。合計が" + newState.m + "の倍数になりました。"
     }
-    // 両者がすべてのカードを出し切った場合は、問題文ルールによりプレイヤー の勝ち
+    // 両者がすべてのカードを出し切った場合はルールによりAIの勝ち
     else if (newState.playerCards.length === 0 && newState.aiCards.length === 0) {
       newState.gameOver = true
-      newState.winner = "player"
-      newState.message = "すべてのカードを出し切りました。あなたの勝ちです！"
+      newState.winner = "ai"
+      newState.message = "すべてのカードを出し切りました。AIの勝ちです！"
     }
     // ゲーム続行の場合
     else {
       newState.currentTurn = player === "player" ? "ai" : "player"
-      newState.message = newState.currentTurn === "player" ? "あなたのターンです。" : "AIのターンです..."
+      newState.message =
+        newState.currentTurn === "player"
+          ? "あなたのターンです。"
+          : "AIのターンです..."
     }
 
     setGameState(newState)
   }
 
-  // プレイヤー（Alice）がカードを選んだときの処理
+  // プレイヤーがカードを選択したときの処理
   const handleCardSelect = (card: number) => {
     if (gameState.currentTurn !== "player" || gameState.gameOver) return
     playCard(card, "player")
   }
 
-  // minimax アルゴリズム（現状の盤面評価）  
-  // ※各再帰呼び出しでは、即座に負ける（合計が M で割り切れる）手は大きなペナルティとして扱います。
+  // minimax アルゴリズム
   const minimax = (
     playerCards: number[],
     aiCards: number[],
@@ -98,14 +115,12 @@ export default function ModMGame() {
     beta = Number.POSITIVE_INFINITY,
   ): { score: number; card?: number } => {
     if (playerCards.length === 0 && aiCards.length === 0) {
-      // すべてのカードを出し切った場合は（最終的に）プレイヤー の勝ちとして評価
-      return { score: 1 }
+      return { score: -1 }
     }
 
     const currentCards = isMaximizing ? aiCards : playerCards
 
     if (currentCards.length === 0) {
-      // 手札がない場合、相手のターンへ
       return minimax(playerCards, aiCards, sum, !isMaximizing, depth + 1, alpha, beta)
     }
 
@@ -114,11 +129,7 @@ export default function ModMGame() {
       let bestCard: number | undefined
       for (const card of aiCards) {
         const newSum = sum + card
-        // もしこのカードで即座に負けるなら強いペナルティを与える
-        if (newSum % gameState.m === 0) {
-          return { score: -10 + depth, card }
-        }
-        // 新たな状態を作る
+        if (newSum % gameState.m === 0) continue
         const newAiCards = aiCards.filter(c => c !== card)
         const result = minimax(playerCards, newAiCards, newSum, false, depth + 1, alpha, beta)
         if (result.score > maxScore) {
@@ -128,15 +139,17 @@ export default function ModMGame() {
         alpha = Math.max(alpha, maxScore)
         if (beta <= alpha) break
       }
+      if (bestCard === undefined) {
+        bestCard = aiCards[Math.floor(Math.random() * aiCards.length)]
+        maxScore = -10 + depth
+      }
       return { score: maxScore, card: bestCard }
     } else {
       let minScore = Number.POSITIVE_INFINITY
       let bestCard: number | undefined
       for (const card of playerCards) {
         const newSum = sum + card
-        if (newSum % gameState.m === 0) {
-          return { score: 10 - depth, card }
-        }
+        if (newSum % gameState.m === 0) continue
         const newPlayerCards = playerCards.filter(c => c !== card)
         const result = minimax(newPlayerCards, aiCards, newSum, true, depth + 1, alpha, beta)
         if (result.score < minScore) {
@@ -146,40 +159,47 @@ export default function ModMGame() {
         beta = Math.min(beta, minScore)
         if (beta <= alpha) break
       }
+      if (bestCard === undefined) {
+        bestCard = playerCards[Math.floor(Math.random() * playerCards.length)]
+        minScore = 10 - depth
+      }
       return { score: minScore, card: bestCard }
     }
   }
 
-  // AIのターンの処理  
-  // ※そのターンで、まず即座に負けとならない（安全な）カードがあれば、その中から minimax により最善手を探します。  
-  //    安全な手が存在しない場合は、ランダムにカードを選びます。
+  // AIのターンの処理
   useEffect(() => {
     if (gameState.currentTurn === "ai" && !gameState.gameOver) {
       const aiTimer = setTimeout(() => {
-        // 安全な手：このターンで出して、場の合計が M で割り切れないカード
         const safeMoves = gameState.aiCards.filter(card => (gameState.sum + card) % gameState.m !== 0)
         let chosenCard: number | undefined
 
         if (safeMoves.length > 0) {
-          // 安全な手があれば、その中から minimax で最善手を求める
           const result = minimax(gameState.playerCards, safeMoves, gameState.sum, true)
           chosenCard = result.card
-          // minimax が undefined を返した場合はランダム選択
           if (chosenCard === undefined) {
             chosenCard = safeMoves[Math.floor(Math.random() * safeMoves.length)]
           }
         } else {
-          // すべてのカードが即座に負けにつながる場合は、ランダムに選択
           chosenCard = gameState.aiCards[Math.floor(Math.random() * gameState.aiCards.length)]
         }
 
         if (chosenCard !== undefined) {
           playCard(chosenCard, "ai")
         }
-      }, 1000) // AI の思考時間として 1 秒
+      }, 1000)
       return () => clearTimeout(aiTimer)
     }
   }, [gameState])
+
+  // 1手戻るボタンのハンドラー
+  const handleUndo = () => {
+    if (history.length >= 2) {
+      const previousState = history[history.length - 2]
+      setHistory(history.slice(0, history.length - 2))
+      setGameState(previousState)
+    }
+  }
 
   return (
     <Box
@@ -201,17 +221,16 @@ export default function ModMGame() {
             p: 2,
             backgroundColor: "rgba(230,230,250,0.9)",
             borderRadius: 4,
-            textAlign: "center",
             mb: 3,
           }}
         >
-          <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
+          <Typography variant="h6" gutterBottom sx={{ color: "#333", textAlign: "center" }}>
             ゲームのルール
           </Typography>
-          <Typography variant="body1" sx={{ color: "#333" }}>
-            1. プレイヤーと AIが交互にカードを出します。<br />
-            2. カードの合計が M の倍数になった時点で、そのターンでカードを出した人が負けです。<br />
-            3. すべてのカードを出し切った場合は、プレイヤー の勝ちです。<br />
+          <Typography variant="body1" sx={{ color: "#333", textAlign: "left" }}>
+            1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）<br />
+            2. カードを出したときに、合計が9の倍数になったら、そのカードを出した人の負けです。<br />
+            3. 両者がすべてのカードを出し切った場合は、AIの勝ちです。<br />
           </Typography>
         </Paper>
 
@@ -226,12 +245,14 @@ export default function ModMGame() {
             textAlign: "center",
           }}
         >
-          <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
-            現在のターン
-          </Typography>
           <Typography variant="body1" sx={{ color: "#333" }}>
             {gameState.message}
           </Typography>
+          {gameState.lastMove && (
+            <Typography variant="body2" sx={{ color: "#666", mt: 1 }}>
+              {gameState.lastMove}
+            </Typography>
+          )}
         </Paper>
 
         {/* AI の手札 */}
@@ -268,11 +289,7 @@ export default function ModMGame() {
                     borderRadius: "50%",
                     backgroundColor: "#d32f2f",
                     color: "#f0f0f0",
-                    // disabled状態でも同じスタイルになるように設定
-                    "&.Mui-disabled": {
-                      backgroundColor: "#d32f2f",
-                      color: "#f0f0f0",
-                    },
+                    "&.Mui-disabled": { backgroundColor: "#d32f2f", color: "#f0f0f0" },
                   }}
                 >
                   {card}
@@ -286,8 +303,7 @@ export default function ModMGame() {
           </Box>
         </Paper>
 
-
-        {/* 場の合計 (Mで割った余り) */}
+        {/* 場の合計 (9で割った余り) */}
         <Paper
           elevation={3}
           sx={{
@@ -299,14 +315,14 @@ export default function ModMGame() {
           }}
         >
           <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
-            場の合計 (Mで割った余り)
+            場の合計 (9で割った余り)
           </Typography>
           <Typography variant="body1" sx={{ color: "#333" }}>
             {gameState.sum % gameState.m}
           </Typography>
         </Paper>
 
-        {/* プレイヤー（あなた）の手札 */}
+        {/* プレイヤー（あなた）の手札エリア（1手戻るボタンを下部に配置） */}
         <Paper
           elevation={3}
           sx={{
@@ -315,6 +331,7 @@ export default function ModMGame() {
             borderRadius: 4,
             mb: 3,
             textAlign: "center",
+            minHeight: "200px",
           }}
         >
           <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
@@ -326,6 +343,7 @@ export default function ModMGame() {
               flexWrap: "wrap",
               gap: 1,
               justifyContent: "center",
+              mb: 2,
             }}
           >
             {gameState.playerCards.length > 0 ? (
@@ -353,6 +371,18 @@ export default function ModMGame() {
               </Typography>
             )}
           </Box>
+          <Button
+            variant="contained"
+            onClick={handleUndo}
+            disabled={history.length < 2}
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            1手戻る
+          </Button>
         </Paper>
 
         {/* ゲーム終了時の結果表示 */}
