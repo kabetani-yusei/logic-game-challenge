@@ -30,13 +30,13 @@ interface GameState {
 
 // 駒をひっくり返す方向：上下左右および斜め
 const DIRECTIONS = [
-  { row: -1, col: 0 },  // 上
-  { row: -1, col: 1 },  // 右上
-  { row: 0, col: 1 },   // 右
-  { row: 1, col: 1 },   // 右下
-  { row: 1, col: 0 },   // 下
-  { row: 1, col: -1 },  // 左下
-  { row: 0, col: -1 },  // 左
+  { row: -1, col: 0 }, // 上
+  { row: -1, col: 1 }, // 右上
+  { row: 0, col: 1 }, // 右
+  { row: 1, col: 1 }, // 右下
+  { row: 1, col: 0 }, // 下
+  { row: 1, col: -1 }, // 左下
+  { row: 0, col: -1 }, // 左
   { row: -1, col: -1 }, // 左上
 ]
 
@@ -46,10 +46,10 @@ const DIRECTIONS = [
 
 export default function Othello() {
   // -------------------------------------------------------------------
-  // 初期配置（6x6）  
-  // ※ 外枠について  
-  //   ・上段：右端セル（col5）は white、それ以外は左方向に向かって black  
-  //   ・各行の右端セル（col5）は全て white  
+  // 初期配置（6x6）
+  // ※ 外枠について
+  //   ・上段：右端セル（col5）は white、それ以外は左方向に向かって black
+  //   ・各行の右端セル（col5）は全て white
   // ※ 中央部分：Row2, Row3 の列2～3に斜めパターン（Row2: [white, black]、Row3: [black, white]）
   // -------------------------------------------------------------------
   const initialBoard: Board = [
@@ -126,26 +126,13 @@ export default function Othello() {
           let c = col + dir.col
           let foundOpponent = false
 
-          while (
-            r >= 0 &&
-            r < board.length &&
-            c >= 0 &&
-            c < board[0].length &&
-            board[r][c] === opponent
-          ) {
+          while (r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === opponent) {
             foundOpponent = true
             r += dir.row
             c += dir.col
           }
 
-          if (
-            foundOpponent &&
-            r >= 0 &&
-            r < board.length &&
-            c >= 0 &&
-            c < board[0].length &&
-            board[r][c] === color
-          ) {
+          if (foundOpponent && r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === color) {
             validMoves.push({ row, col })
             break
           }
@@ -166,13 +153,7 @@ export default function Othello() {
       let r = row + dir.row
       let c = col + dir.col
 
-      while (
-        r >= 0 &&
-        r < board.length &&
-        c >= 0 &&
-        c < board[0].length &&
-        board[r][c] === opponent
-      ) {
+      while (r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === opponent) {
         piecesToFlip.push({ row: r, col: c })
         r += dir.row
         c += dir.col
@@ -239,13 +220,7 @@ export default function Othello() {
     if (gameState.currentTurn === "white" && !gameState.gameOver) {
       const aiTimer = setTimeout(() => {
         const depth = 4
-        const result = minimax(
-          gameState.board,
-          depth,
-          Number.NEGATIVE_INFINITY,
-          Number.POSITIVE_INFINITY,
-          true
-        )
+        const result = minimax(gameState.board, depth, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true)
 
         if (result.move) {
           const newBoard = placePiece(gameState.board, result.move.row, result.move.col, "white")
@@ -256,12 +231,9 @@ export default function Othello() {
             currentTurn: blackValidMoves.length > 0 ? "black" : "white",
             blackScore: countPieces(newBoard, "black"),
             whiteScore: countPieces(newBoard, "white"),
-            gameOver:
-              blackValidMoves.length === 0 &&
-              findValidMoves(newBoard, "white").length === 0,
+            gameOver: blackValidMoves.length === 0 && findValidMoves(newBoard, "white").length === 0,
             winner:
-              blackValidMoves.length === 0 &&
-              findValidMoves(newBoard, "white").length === 0
+              blackValidMoves.length === 0 && findValidMoves(newBoard, "white").length === 0
                 ? determineWinner(newBoard)
                 : null,
             validMoves: blackValidMoves,
@@ -294,7 +266,7 @@ export default function Othello() {
     depth: number,
     alpha: number,
     beta: number,
-    maximizingPlayer: boolean
+    maximizingPlayer: boolean,
   ): { score: number; move: Position | null } {
     const color = maximizingPlayer ? "white" : "black"
     const validMoves = findValidMoves(board, color)
@@ -359,10 +331,18 @@ export default function Othello() {
     }
 
     const edges = [
-      ...Array(6).fill(0).map((_, i) => ({ row: 0, col: i })),
-      ...Array(6).fill(0).map((_, i) => ({ row: 5, col: i })),
-      ...Array(4).fill(0).map((_, i) => ({ row: i + 1, col: 0 })),
-      ...Array(4).fill(0).map((_, i) => ({ row: i + 1, col: 5 })),
+      ...Array(6)
+        .fill(0)
+        .map((_, i) => ({ row: 0, col: i })),
+      ...Array(6)
+        .fill(0)
+        .map((_, i) => ({ row: 5, col: i })),
+      ...Array(4)
+        .fill(0)
+        .map((_, i) => ({ row: i + 1, col: 0 })),
+      ...Array(4)
+        .fill(0)
+        .map((_, i) => ({ row: i + 1, col: 5 })),
     ]
     let edgeScore = 0
     for (const edge of edges) {
@@ -396,22 +376,24 @@ export default function Othello() {
         winner: determineWinner(gameState.board),
       })
     }
-  }, [gameState.gameOver, gameState.winner])
+  }, [gameState])
 
   // ===========================================================
   // ================      Undo Move Function      ============
   // ===========================================================
   function handleUndo() {
     // ここでは、最低でも初期状態＋2手（自分とAI）がある場合のみUndo可能としています
-    setHistory((prevHistory) => {
-      if (prevHistory.length >= 3) {
-        const newHistory = prevHistory.slice(0, prevHistory.length - 2)
-        const previousState = newHistory[newHistory.length - 1]
-        setGameState(previousState)
-        return newHistory
-      }
-      return prevHistory
-    })
+    const handleUndo = () => {
+      setHistory((prevHistory) => {
+        if (prevHistory.length >= 3) {
+          const newHistory = prevHistory.slice(0, prevHistory.length - 2)
+          const previousState = newHistory[newHistory.length - 1]
+          setGameState(previousState)
+          return newHistory
+        }
+        return prevHistory
+      })
+    }
   }
 
   // ===========================================================
@@ -430,7 +412,7 @@ export default function Othello() {
         pt: 2,
       }}
     >
-      <Container maxWidth="sm" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Container maxWidth="sm" sx={{ display: "flex", flexDirection: "column", gap: 2, px: { xs: 1, sm: 2 } }}>
         {/* タイトルとルール */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           <Typography
@@ -468,7 +450,15 @@ export default function Othello() {
             borderRadius: "8px",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 1, sm: 0 },
+            }}
+          >
             <Typography variant="body2" sx={{ color: "#333", fontWeight: "medium" }}>
               {gameState.currentTurn === "black" ? "あなたの番（黒）" : "AIの番（白）..."}
             </Typography>
@@ -510,10 +500,10 @@ export default function Othello() {
         <Paper
           elevation={3}
           sx={{
-            p: 2,
+            p: { xs: 1, sm: 2 },
             backgroundColor: "rgba(255, 255, 255, 0.85)",
             borderRadius: "8px",
-            width: "300px",
+            width: { xs: "100%", sm: "300px" },
             mx: "auto",
           }}
         >
@@ -532,24 +522,18 @@ export default function Othello() {
                       border: "1px solid #81c784", // 緑色のボーダー
                       cursor:
                         gameState.currentTurn === "black" &&
-                        gameState.validMoves.some(
-                          (move) => move.row === rowIndex && move.col === colIndex
-                        )
+                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                           ? "pointer"
                           : "default",
                       "&:hover": {
                         backgroundColor:
                           gameState.currentTurn === "black" &&
-                          gameState.validMoves.some(
-                            (move) => move.row === rowIndex && move.col === colIndex
-                          )
+                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                             ? "#a5d6a7" // ホバー時の少し濃い緑
                             : "#c8e6c9",
                       },
                       ...(gameState.currentTurn === "black" &&
-                      gameState.validMoves.some(
-                        (move) => move.row === rowIndex && move.col === colIndex
-                      )
+                      gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                         ? {
                             "&::after": {
                               content: '""',
@@ -590,12 +574,20 @@ export default function Othello() {
 
         {/* ゲーム中の場合：Undoボタンとタイトルへ戻るボタン */}
         {!gameState.gameOver && (
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 1,
+              flexDirection: { xs: "column", sm: "row" },
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
             <Button
               variant="outlined"
               size="small"
               onClick={handleUndo}
-              disabled={history.length < 3}  // 履歴が足りない場合は無効化
+              disabled={history.length < 3} // 履歴が足りない場合は無効化
               sx={{
                 borderRadius: "20px",
                 px: 3,
@@ -604,6 +596,7 @@ export default function Othello() {
                 borderColor: "#ccc",
                 backgroundColor: "rgba(255, 255, 255, 0.7)",
                 fontSize: "0.8rem",
+                width: { xs: "100%", sm: "auto" },
               }}
             >
               1手戻る
@@ -621,6 +614,7 @@ export default function Othello() {
                 borderColor: "#ccc",
                 backgroundColor: "rgba(255, 255, 255, 0.7)",
                 fontSize: "0.8rem",
+                width: { xs: "100%", sm: "auto" },
               }}
             >
               タイトルへ
@@ -646,12 +640,7 @@ export default function Othello() {
               variant="body1"
               gutterBottom
               sx={{
-                color:
-                  gameState.winner === "black"
-                    ? "#4caf50"
-                    : gameState.winner === "white"
-                    ? "#f44336"
-                    : "#ff9800",
+                color: gameState.winner === "black" ? "#4caf50" : gameState.winner === "white" ? "#f44336" : "#ff9800",
                 fontWeight: "medium",
                 mb: 2,
                 p: 1,
@@ -659,8 +648,8 @@ export default function Othello() {
                   gameState.winner === "black"
                     ? "rgba(76, 175, 80, 0.1)"
                     : gameState.winner === "white"
-                    ? "rgba(244, 67, 54, 0.1)"
-                    : "rgba(255, 152, 0, 0.1)",
+                      ? "rgba(244, 67, 54, 0.1)"
+                      : "rgba(255, 152, 0, 0.1)",
                 borderRadius: "6px",
                 display: "inline-block",
               }}
@@ -668,8 +657,8 @@ export default function Othello() {
               {gameState.winner === "black"
                 ? "プレイヤーの勝ちです！"
                 : gameState.winner === "white"
-                ? "AIの勝ちです"
-                : "引き分けです"}
+                  ? "AIの勝ちです"
+                  : "引き分けです"}
             </Typography>
             <Button
               variant="contained"

@@ -66,8 +66,16 @@ interface GameCardProps {
 function GameCard({ title, description, to }: GameCardProps) {
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", p: 3 }}>
-        <Typography variant="h5" component="h3" gutterBottom fontWeight="bold">
+      <CardContent
+        sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", p: { xs: 2, sm: 3 } }}
+      >
+        <Typography
+          variant="h5"
+          component="h3"
+          gutterBottom
+          fontWeight="bold"
+          sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+        >
           {title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -80,11 +88,12 @@ function GameCard({ title, description, to }: GameCardProps) {
             variant="contained"
             fullWidth
             sx={{
-              py: 1.5,
+              py: { xs: 1, sm: 1.5 },
               background: "linear-gradient(45deg, #9c27b0 30%, #3f51b5 90%)",
               "&:hover": {
                 background: "linear-gradient(45deg, #7b1fa2 30%, #303f9f 90%)",
               },
+              fontSize: { xs: "0.875rem", sm: "1rem" },
             }}
           >
             プレイする
@@ -105,6 +114,7 @@ function GameCardWrapper({ children }: { children: React.ReactNode }) {
         // レスポンシブなサイズ設定
         flexBasis: {
           xs: "100%",
+          sm: "50%",
           md: "33.333%",
         },
       }}
@@ -124,7 +134,7 @@ function HomePage() {
         alignItems: "center",
         justifyContent: "center",
         background: "linear-gradient(to bottom, #1a1a2e, #16213e)",
-        p: 4,
+        p: { xs: 2, sm: 4 },
       }}
     >
       <Container maxWidth="lg" sx={{ textAlign: "center" }}>
@@ -140,12 +150,22 @@ function HomePage() {
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             mb: 2,
+            fontSize: { xs: "2rem", sm: "3rem", md: "3.75rem" },
           }}
         >
           頭脳王に挑戦！
         </Typography>
 
-        <Typography variant="h4" component="h2" gutterBottom color="text.secondary" sx={{ mb: 8 }}>
+        <Typography
+          variant="h4"
+          component="h2"
+          gutterBottom
+          color="text.secondary"
+          sx={{
+            mb: { xs: 4, sm: 8 },
+            fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2.125rem" },
+          }}
+        >
           必勝法を見抜いて、AIに勝利しよう
         </Typography>
 
@@ -175,14 +195,17 @@ function HomePage() {
           </GameCardWrapper>
 
           <GameCardWrapper>
-            <GameCard title="mod Mゲーム"
+            <GameCard
+              title="mod Mゲーム"
               description={
                 <>
-                  倍数にならないようにする数学パズル<br />
+                  倍数にならないようにする数学パズル
+                  <br />
                   出典：AtCoder Regular Contest 185 A 問題
                 </>
               }
-              to="/mod-m" />
+              to="/mod-m"
+            />
           </GameCardWrapper>
         </Box>
       </Container>
