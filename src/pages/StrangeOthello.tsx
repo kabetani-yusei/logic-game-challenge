@@ -201,6 +201,8 @@ export default function Othello() {
 
     const newBoard = placePiece(gameState.board, row, col, "black")
     const whiteValidMoves = findValidMoves(newBoard, "white")
+    // ← AIの有効手がない場合、黒の有効手を再計算する
+    const nextValidMoves = whiteValidMoves.length > 0 ? whiteValidMoves : findValidMoves(newBoard, "black")
 
     updateGameState({
       board: newBoard,
@@ -209,7 +211,7 @@ export default function Othello() {
       whiteScore: countPieces(newBoard, "white"),
       gameOver: whiteValidMoves.length === 0 && findValidMoves(newBoard, "black").length === 0,
       winner: null,
-      validMoves: whiteValidMoves,
+      validMoves: nextValidMoves,
     })
   }
 
@@ -397,9 +399,8 @@ export default function Othello() {
     })
   }
 
-
   // ===========================================================
-  // ================         Rendering UI         =============
+  // ================         Rendering UI         ============
   // ===========================================================
   return (
     <Box
@@ -524,31 +525,31 @@ export default function Othello() {
                       border: "1px solid #81c784", // 緑色のボーダー
                       cursor:
                         gameState.currentTurn === "black" &&
-                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                           ? "pointer"
                           : "default",
                       "&:hover": {
                         backgroundColor:
                           gameState.currentTurn === "black" &&
-                            gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                             ? "#a5d6a7" // ホバー時の少し濃い緑
                             : "#c8e6c9",
                       },
                       ...(gameState.currentTurn === "black" &&
-                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                      gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                         ? {
-                          "&::after": {
-                            content: '""',
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: "30%",
-                            height: "30%",
-                            borderRadius: "50%",
-                            backgroundColor: "rgba(0, 128, 0, 0.3)",
-                          },
-                        }
+                            "&::after": {
+                              content: '""',
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              width: "30%",
+                              height: "30%",
+                              borderRadius: "50%",
+                              backgroundColor: "rgba(0, 128, 0, 0.3)",
+                            },
+                          }
                         : {}),
                     }}
                   >
@@ -654,8 +655,8 @@ export default function Othello() {
                   gameState.winner === "black"
                     ? "rgba(76, 175, 80, 0.1)"
                     : gameState.winner === "white"
-                      ? "rgba(244, 67, 54, 0.1)"
-                      : "rgba(255, 152, 0, 0.1)",
+                    ? "rgba(244, 67, 54, 0.1)"
+                    : "rgba(255, 152, 0, 0.1)",
                 borderRadius: "6px",
                 display: "inline-block",
               }}
@@ -663,8 +664,8 @@ export default function Othello() {
               {gameState.winner === "black"
                 ? "プレイヤーの勝ちです！"
                 : gameState.winner === "white"
-                  ? "AIの勝ちです"
-                  : "引き分けです"}
+                ? "AIの勝ちです"
+                : "引き分けです"}
             </Typography>
             <Button
               variant="contained"
