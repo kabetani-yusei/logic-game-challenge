@@ -24,7 +24,7 @@ export default function ModMGame() {
   // ゲームの初期状態（N=5, M=9 固定、プレイヤーは後手、AIから行動）
   const initializeGame = (): GameState => {
     const n = 5
-    const m = 7
+    const m = 9
     const playerCards = Array.from({ length: n }, (_, i) => i + 1)
     const aiCards = Array.from({ length: n }, (_, i) => i + 1)
 

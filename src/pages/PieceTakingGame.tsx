@@ -27,8 +27,8 @@ interface GameState {
 export default function PieceTakingGame() {
   // ゲームの初期状態
   const [gameState, setGameState] = useState<GameState>({
-    bluePieces: 7,
-    yellowPieces: 6,
+    bluePieces: 4,
+    yellowPieces: 3,
     redPieces: 2,
     currentTurn: "player",
     selectedColor: "blue",
@@ -413,15 +413,15 @@ export default function PieceTakingGame() {
           overflow: "hidden",
           "&::before": isSelected
             ? {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-                animation: "pulse 1.5s infinite",
-              }
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
+              animation: "pulse 1.5s infinite",
+            }
             : {},
           "@keyframes pulse": {
             "0%": { opacity: 0.6 },
@@ -464,7 +464,7 @@ export default function PieceTakingGame() {
               textShadow: "0 1px 1px rgba(0,0,0,0.3)",
             }}
           >
-            {gameState.selectedCount}個
+            {count}個
           </Typography>
         </Box>
       </Box>
@@ -601,9 +601,9 @@ export default function PieceTakingGame() {
             {gameState.currentTurn === "player" ? (
               <>
                 {/* 親コンテナを横並びから縦並びに変更し、中央ぞろえに */}
-                <Box sx={{ 
-                  display: "flex", 
-                  flexDirection: "column", 
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
                   gap: 2,
                   width: "100%"
