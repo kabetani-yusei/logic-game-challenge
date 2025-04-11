@@ -186,7 +186,6 @@ export default function PieceTakingGame() {
     updateGameState(newState)
   }
 
-  // AIの手番を処理（AIはNim戦略を使って最善手を打ち、最善手が存在しない場合はランダムに取る（最大2個））
   useEffect(() => {
     if (gameState.currentTurn === "ai" && !gameState.gameOver) {
       const aiTimer = setTimeout(() => {
@@ -239,6 +238,31 @@ export default function PieceTakingGame() {
             }
             newState.selectedColor = onlyColor
             newState.lastAIMove = { color: onlyColor, count: removal }
+            moveFound = true
+          }
+        }
+
+        // ★ 新規追加 ★
+        // ③ 全ての色が盤面に残っている場合、もし2色がすでに1個で残っており、
+        //    残りの1色が 1 でない場合は、残りの色から必要な個数を取って 1 にすることで (1,1,1) にできる
+        if (!moveFound && available.length === 3) {
+          if (blue === 1 && yellow === 1 && red > 1) {
+            const removal = red - 1
+            newState.redPieces = 1
+            newState.selectedColor = "red"
+            newState.lastAIMove = { color: "red", count: removal }
+            moveFound = true
+          } else if (blue === 1 && red === 1 && yellow > 1) {
+            const removal = yellow - 1
+            newState.yellowPieces = 1
+            newState.selectedColor = "yellow"
+            newState.lastAIMove = { color: "yellow", count: removal }
+            moveFound = true
+          } else if (yellow === 1 && red === 1 && blue > 1) {
+            const removal = blue - 1
+            newState.bluePieces = 1
+            newState.selectedColor = "blue"
+            newState.lastAIMove = { color: "blue", count: removal }
             moveFound = true
           }
         }
@@ -420,15 +444,15 @@ export default function PieceTakingGame() {
           cursor: count > 0 ? "pointer" : "default",
           "&::before": isSelected
             ? {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-                animation: "pulse 1.5s infinite",
-              }
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
+              animation: "pulse 1.5s infinite",
+            }
             : {},
           "@keyframes pulse": {
             "0%": { opacity: 0.6 },
