@@ -381,20 +381,22 @@ export default function Othello() {
   // ===========================================================
   // ================      Undo Move Function      ============
   // ===========================================================
+  // Undo機能の修正
   function handleUndo() {
-    // ここでは、最低でも初期状態＋2手（自分とAI）がある場合のみUndo可能としています
-    const handleUndo = () => {
-      setHistory((prevHistory) => {
-        if (prevHistory.length >= 3) {
-          const newHistory = prevHistory.slice(0, prevHistory.length - 2)
-          const previousState = newHistory[newHistory.length - 1]
-          setGameState(previousState)
-          return newHistory
-        }
-        return prevHistory
-      })
-    }
+    // 初期状態＋2手（プレイヤーとAI）以上の場合にUndoを実施
+    setHistory((prevHistory) => {
+      if (prevHistory.length >= 3) {
+        // 履歴の末尾2手分を取り除く
+        const newHistory = prevHistory.slice(0, prevHistory.length - 2)
+        // 直前の状態を取得しゲーム状態に反映
+        const previousState = newHistory[newHistory.length - 1]
+        setGameState(previousState)
+        return newHistory
+      }
+      return prevHistory
+    })
   }
+
 
   // ===========================================================
   // ================         Rendering UI         =============
@@ -522,31 +524,31 @@ export default function Othello() {
                       border: "1px solid #81c784", // 緑色のボーダー
                       cursor:
                         gameState.currentTurn === "black" &&
-                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                           ? "pointer"
                           : "default",
                       "&:hover": {
                         backgroundColor:
                           gameState.currentTurn === "black" &&
-                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                            gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                             ? "#a5d6a7" // ホバー時の少し濃い緑
                             : "#c8e6c9",
                       },
                       ...(gameState.currentTurn === "black" &&
-                      gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
                         ? {
-                            "&::after": {
-                              content: '""',
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: "30%",
-                              height: "30%",
-                              borderRadius: "50%",
-                              backgroundColor: "rgba(0, 128, 0, 0.3)",
-                            },
-                          }
+                          "&::after": {
+                            content: '""',
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: "30%",
+                            height: "30%",
+                            borderRadius: "50%",
+                            backgroundColor: "rgba(0, 128, 0, 0.3)",
+                          },
+                        }
                         : {}),
                     }}
                   >
