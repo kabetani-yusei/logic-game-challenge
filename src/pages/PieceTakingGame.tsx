@@ -413,15 +413,15 @@ export default function PieceTakingGame() {
           overflow: "hidden",
           "&::before": isSelected
             ? {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-                animation: "pulse 1.5s infinite",
-              }
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
+              animation: "pulse 1.5s infinite",
+            }
             : {},
           "@keyframes pulse": {
             "0%": { opacity: 0.6 },
@@ -511,12 +511,13 @@ export default function PieceTakingGame() {
               minHeight: "70px",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.6, ml: 15 }}>
+            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.6, ml: { xs: 0, sm: 15 } }}>
               ・3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います
               <br />
               ・最後の1個を取った方が負けです
             </Typography>
           </Paper>
+
         </Box>
 
         {/* ゲームボード */}

@@ -228,7 +228,6 @@ export default function ModMGame() {
             mod Mゲーム
           </Typography>
 
-          {/* ゲームルール説明 */}
           <Paper
             elevation={2}
             sx={{
@@ -237,7 +236,14 @@ export default function ModMGame() {
               borderRadius: "8px",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.4, ml: 15 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#333",
+                lineHeight: 1.4,
+                ml: { xs: 0, sm: 15 } // 0 margin for smartphones, 15 for larger screens
+              }}
+            >
               1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）
               <br />
               2. カードを出したときに、合計が9の倍数になったら、そのカードを出した人の負けです。
@@ -245,6 +251,7 @@ export default function ModMGame() {
               3. 両者がすべてのカードを出し切った場合は、AIの勝ちです。
             </Typography>
           </Paper>
+
         </Box>
 
         {/* ゲーム情報とAIの手札を横並びに（スマホでは縦並び） */}
