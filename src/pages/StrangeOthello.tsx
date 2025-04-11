@@ -68,20 +68,32 @@ export default function Othello() {
   ]
 
   // -------------------------------------------------------------------
-  // ゲーム状態の初期化
+  // 初期状態の作成
   // -------------------------------------------------------------------
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const initialValidMoves = findValidMoves(initialBoard, "black")
-    return {
-      board: initialBoard,
-      currentTurn: "black", // プレイヤー（黒）が先手
-      blackScore: countPieces(initialBoard, "black"),
-      whiteScore: countPieces(initialBoard, "white"),
-      gameOver: false,
-      winner: null,
-      validMoves: initialValidMoves,
-    }
-  })
+  const initialValidMoves = findValidMoves(initialBoard, "black")
+  const initialGameState: GameState = {
+    board: initialBoard,
+    currentTurn: "black", // プレイヤー（黒）が先手
+    blackScore: countPieces(initialBoard, "black"),
+    whiteScore: countPieces(initialBoard, "white"),
+    gameOver: false,
+    winner: null,
+    validMoves: initialValidMoves,
+  }
+
+  // -------------------------------------------------------------------
+  // ゲーム状態と履歴の State
+  // -------------------------------------------------------------------
+  const [gameState, setGameState] = useState<GameState>(initialGameState)
+  const [history, setHistory] = useState<GameState[]>([initialGameState])
+
+  // -------------------------------------------------------------------
+  // ゲーム状態の更新と履歴への追加を一括で行う関数
+  // -------------------------------------------------------------------
+  function updateGameState(newState: GameState) {
+    setGameState(newState)
+    setHistory((prevHistory) => [...prevHistory, newState])
+  }
 
   // ===========================================================
   // ================      Utility Functions     =============
@@ -209,7 +221,7 @@ export default function Othello() {
     const newBoard = placePiece(gameState.board, row, col, "black")
     const whiteValidMoves = findValidMoves(newBoard, "white")
 
-    setGameState({
+    updateGameState({
       board: newBoard,
       currentTurn: whiteValidMoves.length > 0 ? "white" : "black",
       blackScore: countPieces(newBoard, "black"),
@@ -239,7 +251,7 @@ export default function Othello() {
           const newBoard = placePiece(gameState.board, result.move.row, result.move.col, "white")
           const blackValidMoves = findValidMoves(newBoard, "black")
 
-          setGameState((prevState) => ({
+          updateGameState({
             board: newBoard,
             currentTurn: blackValidMoves.length > 0 ? "black" : "white",
             blackScore: countPieces(newBoard, "black"),
@@ -253,21 +265,21 @@ export default function Othello() {
                 ? determineWinner(newBoard)
                 : null,
             validMoves: blackValidMoves,
-          }))
+          })
         } else {
           const blackValidMoves = findValidMoves(gameState.board, "black")
           if (blackValidMoves.length === 0) {
-            setGameState((prevState) => ({
-              ...prevState,
+            updateGameState({
+              ...gameState,
               gameOver: true,
-              winner: determineWinner(prevState.board),
-            }))
+              winner: determineWinner(gameState.board),
+            })
           } else {
-            setGameState((prevState) => ({
-              ...prevState,
+            updateGameState({
+              ...gameState,
               currentTurn: "black",
               validMoves: blackValidMoves,
-            }))
+            })
           }
         }
       }, 1000)
@@ -379,12 +391,28 @@ export default function Othello() {
 
   useEffect(() => {
     if (gameState.gameOver && !gameState.winner) {
-      setGameState((prevState) => ({
-        ...prevState,
-        winner: determineWinner(prevState.board),
-      }))
+      updateGameState({
+        ...gameState,
+        winner: determineWinner(gameState.board),
+      })
     }
   }, [gameState.gameOver, gameState.winner])
+
+  // ===========================================================
+  // ================      Undo Move Function      ============
+  // ===========================================================
+  function handleUndo() {
+    // ここでは、最低でも初期状態＋2手（自分とAI）がある場合のみUndo可能としています
+    setHistory((prevHistory) => {
+      if (prevHistory.length >= 3) {
+        const newHistory = prevHistory.slice(0, prevHistory.length - 2)
+        const previousState = newHistory[newHistory.length - 1]
+        setGameState(previousState)
+        return newHistory
+      }
+      return prevHistory
+    })
+  }
 
   // ===========================================================
   // ================         Rendering UI         =============
@@ -402,7 +430,6 @@ export default function Othello() {
         pt: 2,
       }}
     >
-      {/* 画面全体のコンテナを maxWidth "sm" に変更 */}
       <Container maxWidth="sm" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* タイトルとルール */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -479,7 +506,7 @@ export default function Othello() {
           </Box>
         </Paper>
 
-        {/* 盤面を囲む領域に固定幅（例：300px）を指定してサイズを小さく */}
+        {/* 盤面（固定幅 300px） */}
         <Paper
           elevation={3}
           sx={{
@@ -501,8 +528,8 @@ export default function Othello() {
                       width: "16.666%",
                       paddingTop: "16.666%",
                       position: "relative",
-                      backgroundColor: "#add8e6",
-                      border: "1px solid #90caf9",
+                      backgroundColor: "#c8e6c9", // 背景色をライトグリーンに変更
+                      border: "1px solid #81c784", // 緑色のボーダー
                       cursor:
                         gameState.currentTurn === "black" &&
                         gameState.validMoves.some(
@@ -516,8 +543,8 @@ export default function Othello() {
                           gameState.validMoves.some(
                             (move) => move.row === rowIndex && move.col === colIndex
                           )
-                            ? "#90caf9"
-                            : "#add8e6",
+                            ? "#a5d6a7" // ホバー時の少し濃い緑
+                            : "#c8e6c9",
                       },
                       ...(gameState.currentTurn === "black" &&
                       gameState.validMoves.some(
@@ -560,6 +587,46 @@ export default function Othello() {
             ))}
           </Box>
         </Paper>
+
+        {/* ゲーム中の場合：Undoボタンとタイトルへ戻るボタン */}
+        {!gameState.gameOver && (
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleUndo}
+              disabled={history.length < 3}  // 履歴が足りない場合は無効化
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.5,
+                color: "#555",
+                borderColor: "#ccc",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                fontSize: "0.8rem",
+              }}
+            >
+              1手戻る
+            </Button>
+            <Button
+              component={Link}
+              to="/"
+              variant="outlined"
+              size="small"
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.5,
+                color: "#555",
+                borderColor: "#ccc",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                fontSize: "0.8rem",
+              }}
+            >
+              タイトルへ
+            </Button>
+          </Box>
+        )}
 
         {/* ゲーム終了時の結果表示 */}
         {gameState.gameOver && (
@@ -622,29 +689,6 @@ export default function Othello() {
               タイトルに戻る
             </Button>
           </Paper>
-        )}
-
-        {/* タイトルに戻るボタン（ゲーム中の場合） */}
-        {!gameState.gameOver && (
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              component={Link}
-              to="/"
-              variant="outlined"
-              size="small"
-              sx={{
-                borderRadius: "20px",
-                px: 3,
-                py: 0.5,
-                color: "#555",
-                borderColor: "#ccc",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                fontSize: "0.8rem",
-              }}
-            >
-              タイトルへ
-            </Button>
-          </Box>
         )}
       </Container>
     </Box>
