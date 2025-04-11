@@ -237,7 +237,7 @@ export default function ModMGame() {
               borderRadius: "8px",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.4 }}>
+            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.4, ml: 13 }}>
               1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）
               <br />
               2. カードを出したときに、合計が9の倍数になったら、そのカードを出した人の負けです。
