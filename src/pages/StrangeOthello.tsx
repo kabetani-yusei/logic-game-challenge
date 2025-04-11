@@ -4,65 +4,107 @@ import { useState, useEffect } from "react"
 import { Box, Typography, Button, Paper, Container } from "@mui/material"
 import { Link } from "react-router-dom"
 
-// ボードの状態を表す型
-type CellState = "empty" | "player" | "ai"
+// ===========================================================
+// ================   Types and Constants   ==================
+// ===========================================================
+
+// 各セルの状態：空、黒、白
+type CellState = "empty" | "black" | "white"
+
+// 盤面は CellState の2次元配列
 type Board = CellState[][]
+
+// 盤面上の位置（行と列）
 type Position = { row: number; col: number }
 
-// ゲームの状態を表す型
+// ゲーム全体の状態
 interface GameState {
   board: Board
-  currentTurn: "player" | "ai"
-  playerScore: number
-  aiScore: number
+  currentTurn: "black" | "white"
+  blackScore: number
+  whiteScore: number
   gameOver: boolean
-  winner: "player" | "ai" | "draw" | null
+  winner: "black" | "white" | "draw" | null
   validMoves: Position[]
 }
 
-// 方向を表す定数
+// 駒をひっくり返す方向：上下左右および斜め
 const DIRECTIONS = [
-  { row: -1, col: 0 }, // 上
-  { row: -1, col: 1 }, // 右上
-  { row: 0, col: 1 }, // 右
-  { row: 1, col: 1 }, // 右下
-  { row: 1, col: 0 }, // 下
-  { row: 1, col: -1 }, // 左下
-  { row: 0, col: -1 }, // 左
+  { row: -1, col: 0 },  // 上
+  { row: -1, col: 1 },  // 右上
+  { row: 0, col: 1 },   // 右
+  { row: 1, col: 1 },   // 右下
+  { row: 1, col: 0 },   // 下
+  { row: 1, col: -1 },  // 左下
+  { row: 0, col: -1 },  // 左
   { row: -1, col: -1 }, // 左上
 ]
 
-export default function StrangeOthello() {
-  // 初期ボードの状態（6x6）
+// ===========================================================
+// ================      Main Othello      =================
+// ===========================================================
+
+export default function Othello() {
+  // -------------------------------------------------------------------
+  // 初期配置（6x6）  
+  // ※ 外枠について  
+  //   ・上段：右端セル（col5）は white、それ以外は左方向に向かって black  
+  //   ・各行の右端セル（col5）は全て white  
+  // ※ 中央部分：Row2, Row3 の列2～3に斜めパターン（Row2: [white, black]、Row3: [black, white]）
+  // -------------------------------------------------------------------
   const initialBoard: Board = [
-    ["player", "empty", "empty", "empty", "empty", "empty"],
-    ["player", "empty", "empty", "empty", "empty", "empty"],
-    ["player", "empty", "player", "empty", "empty", "empty"],
-    ["player", "empty", "empty", "player", "empty", "empty"],
-    ["player", "empty", "empty", "empty", "empty", "empty"],
-    ["player", "ai", "ai", "ai", "ai", "ai"],
+    // Row 0: 上段 — col0～col4 が black、col5 が white
+    ["black", "black", "black", "black", "black", "white"],
+    // Row 1
+    ["black", "empty", "empty", "empty", "empty", "white"],
+    // Row 2
+    ["black", "empty", "white", "black", "empty", "white"],
+    // Row 3
+    ["black", "empty", "black", "white", "empty", "white"],
+    // Row 4
+    ["black", "empty", "empty", "empty", "empty", "white"],
+    // Row 5: 下段 — 左端は black、右側は white
+    ["black", "white", "white", "white", "white", "white"],
   ]
 
-  // ゲームの初期状態
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const initialValidMoves = findValidMoves(initialBoard, "player")
-    return {
-      board: initialBoard,
-      currentTurn: "player",
-      playerScore: countPieces(initialBoard, "player"),
-      aiScore: countPieces(initialBoard, "ai"),
-      gameOver: false,
-      winner: null,
-      validMoves: initialValidMoves,
-    }
-  })
+  // -------------------------------------------------------------------
+  // 初期状態の作成
+  // -------------------------------------------------------------------
+  const initialValidMoves = findValidMoves(initialBoard, "black")
+  const initialGameState: GameState = {
+    board: initialBoard,
+    currentTurn: "black", // プレイヤー（黒）が先手
+    blackScore: countPieces(initialBoard, "black"),
+    whiteScore: countPieces(initialBoard, "white"),
+    gameOver: false,
+    winner: null,
+    validMoves: initialValidMoves,
+  }
 
-  // 駒の数を数える関数
-  function countPieces(board: Board, player: "player" | "ai"): number {
+  // -------------------------------------------------------------------
+  // ゲーム状態と履歴の State
+  // -------------------------------------------------------------------
+  const [gameState, setGameState] = useState<GameState>(initialGameState)
+  const [history, setHistory] = useState<GameState[]>([initialGameState])
+
+  // -------------------------------------------------------------------
+  // ゲーム状態の更新と履歴への追加を一括で行う関数
+  // -------------------------------------------------------------------
+  function updateGameState(newState: GameState) {
+    setGameState(newState)
+    setHistory((prevHistory) => [...prevHistory, newState])
+  }
+
+  // ===========================================================
+  // ================      Utility Functions     =============
+  // ===========================================================
+
+  // 指定した色の駒の数を数える
+  function countPieces(board: Board, color: "black" | "white"): number {
     let count = 0
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
-        if (board[row][col] === player) {
+        if (board[row][col] === color) {
           count++
         }
       }
@@ -70,32 +112,42 @@ export default function StrangeOthello() {
     return count
   }
 
-  // 有効な手を見つける関数
-  function findValidMoves(board: Board, player: "player" | "ai"): Position[] {
-    const opponent = player === "player" ? "ai" : "player"
+  // 指定した色の有効な手を探す
+  function findValidMoves(board: Board, color: "black" | "white"): Position[] {
+    const opponent = color === "black" ? "white" : "black"
     const validMoves: Position[] = []
 
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
         if (board[row][col] !== "empty") continue
 
-        // 各方向をチェック
         for (const dir of DIRECTIONS) {
           let r = row + dir.row
           let c = col + dir.col
           let foundOpponent = false
 
-          // ボード上にあり、相手の駒があるか確認
-          while (r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === opponent) {
+          while (
+            r >= 0 &&
+            r < board.length &&
+            c >= 0 &&
+            c < board[0].length &&
+            board[r][c] === opponent
+          ) {
             foundOpponent = true
             r += dir.row
             c += dir.col
           }
 
-          // 相手の駒を挟んで自分の駒があるか確認
-          if (foundOpponent && r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === player) {
+          if (
+            foundOpponent &&
+            r >= 0 &&
+            r < board.length &&
+            c >= 0 &&
+            c < board[0].length &&
+            board[r][c] === color
+          ) {
             validMoves.push({ row, col })
-            break // この位置は有効なので、他の方向をチェックする必要はない
+            break
           }
         }
       }
@@ -104,32 +156,35 @@ export default function StrangeOthello() {
     return validMoves
   }
 
-  // 駒を置いた時に裏返る駒を計算する関数
-  function getFlippedPieces(board: Board, row: number, col: number, player: "player" | "ai"): Position[] {
-    const opponent = player === "player" ? "ai" : "player"
+  // ひっくり返すべき駒の位置を計算
+  function getFlippedPieces(board: Board, row: number, col: number, color: "black" | "white"): Position[] {
+    const opponent = color === "black" ? "white" : "black"
     const flippedPieces: Position[] = []
 
-    // 各方向をチェック
     for (const dir of DIRECTIONS) {
       const piecesToFlip: Position[] = []
       let r = row + dir.row
       let c = col + dir.col
 
-      // ボード上にあり、相手の駒があるか確認
-      while (r >= 0 && r < board.length && c >= 0 && c < board[0].length && board[r][c] === opponent) {
+      while (
+        r >= 0 &&
+        r < board.length &&
+        c >= 0 &&
+        c < board[0].length &&
+        board[r][c] === opponent
+      ) {
         piecesToFlip.push({ row: r, col: c })
         r += dir.row
         c += dir.col
       }
 
-      // 相手の駒を挟んで自分の駒があるか確認
       if (
         piecesToFlip.length > 0 &&
         r >= 0 &&
         r < board.length &&
         c >= 0 &&
         c < board[0].length &&
-        board[r][c] === player
+        board[r][c] === color
       ) {
         flippedPieces.push(...piecesToFlip)
       }
@@ -138,62 +193,112 @@ export default function StrangeOthello() {
     return flippedPieces
   }
 
-  // 駒を置く関数
-  function placePiece(board: Board, row: number, col: number, player: "player" | "ai"): Board {
+  // 駒を配置し盤面を更新
+  function placePiece(board: Board, row: number, col: number, color: "black" | "white"): Board {
     const newBoard = board.map((r) => [...r])
-    newBoard[row][col] = player
+    newBoard[row][col] = color
 
-    // 裏返る駒を計算
-    const flippedPieces = getFlippedPieces(board, row, col, player)
-
-    // 駒を裏返す
+    const flippedPieces = getFlippedPieces(board, row, col, color)
     for (const piece of flippedPieces) {
-      newBoard[piece.row][piece.col] = player
+      newBoard[piece.row][piece.col] = color
     }
 
     return newBoard
   }
 
-  // プレイヤーの手を処理する関数
-  function handlePlayerMove(row: number, col: number) {
+  // -------------------------------------------------------------------
+  // プレイヤー（黒）の操作
+  // -------------------------------------------------------------------
+  function handleBlackMove(row: number, col: number) {
     if (
-      gameState.currentTurn !== "player" ||
+      gameState.currentTurn !== "black" ||
       gameState.gameOver ||
       !gameState.validMoves.some((move) => move.row === row && move.col === col)
     ) {
       return
     }
 
-    // 新しいボードを作成
-    const newBoard = placePiece(gameState.board, row, col, "player")
+    const newBoard = placePiece(gameState.board, row, col, "black")
+    const whiteValidMoves = findValidMoves(newBoard, "white")
 
-    // AIの有効な手を計算
-    const aiValidMoves = findValidMoves(newBoard, "ai")
-
-    // ゲーム状態を更新
-    setGameState({
+    updateGameState({
       board: newBoard,
-      currentTurn: aiValidMoves.length > 0 ? "ai" : "player",
-      playerScore: countPieces(newBoard, "player"),
-      aiScore: countPieces(newBoard, "ai"),
-      gameOver: aiValidMoves.length === 0 && findValidMoves(newBoard, "player").length === 0,
+      currentTurn: whiteValidMoves.length > 0 ? "white" : "black",
+      blackScore: countPieces(newBoard, "black"),
+      whiteScore: countPieces(newBoard, "white"),
+      gameOver: whiteValidMoves.length === 0 && findValidMoves(newBoard, "black").length === 0,
       winner: null,
-      validMoves: aiValidMoves,
+      validMoves: whiteValidMoves,
     })
   }
 
-  // ミニマックスアルゴリズム（アルファベータ枝刈り）
+  // -------------------------------------------------------------------
+  // AI（白）の操作
+  // -------------------------------------------------------------------
+  useEffect(() => {
+    if (gameState.currentTurn === "white" && !gameState.gameOver) {
+      const aiTimer = setTimeout(() => {
+        const depth = 4
+        const result = minimax(
+          gameState.board,
+          depth,
+          Number.NEGATIVE_INFINITY,
+          Number.POSITIVE_INFINITY,
+          true
+        )
+
+        if (result.move) {
+          const newBoard = placePiece(gameState.board, result.move.row, result.move.col, "white")
+          const blackValidMoves = findValidMoves(newBoard, "black")
+
+          updateGameState({
+            board: newBoard,
+            currentTurn: blackValidMoves.length > 0 ? "black" : "white",
+            blackScore: countPieces(newBoard, "black"),
+            whiteScore: countPieces(newBoard, "white"),
+            gameOver:
+              blackValidMoves.length === 0 &&
+              findValidMoves(newBoard, "white").length === 0,
+            winner:
+              blackValidMoves.length === 0 &&
+              findValidMoves(newBoard, "white").length === 0
+                ? determineWinner(newBoard)
+                : null,
+            validMoves: blackValidMoves,
+          })
+        } else {
+          const blackValidMoves = findValidMoves(gameState.board, "black")
+          if (blackValidMoves.length === 0) {
+            updateGameState({
+              ...gameState,
+              gameOver: true,
+              winner: determineWinner(gameState.board),
+            })
+          } else {
+            updateGameState({
+              ...gameState,
+              currentTurn: "black",
+              validMoves: blackValidMoves,
+            })
+          }
+        }
+      }, 1000)
+
+      return () => clearTimeout(aiTimer)
+    }
+  }, [gameState])
+
+  // ミニマックスアルゴリズム（α-β枝刈り付き）
   function minimax(
     board: Board,
     depth: number,
     alpha: number,
     beta: number,
-    maximizingPlayer: boolean,
+    maximizingPlayer: boolean
   ): { score: number; move: Position | null } {
-    const player = maximizingPlayer ? "ai" : "player"
-    const validMoves = findValidMoves(board, player)
+    const color = maximizingPlayer ? "white" : "black"
+    const validMoves = findValidMoves(board, color)
 
-    // 終了条件
     if (depth === 0 || validMoves.length === 0) {
       return {
         score: evaluateBoard(board),
@@ -206,164 +311,112 @@ export default function StrangeOthello() {
     if (maximizingPlayer) {
       let maxEval = Number.NEGATIVE_INFINITY
       for (const move of validMoves) {
-        const newBoard = placePiece(board, move.row, move.col, "ai")
+        const newBoard = placePiece(board, move.row, move.col, "white")
         const evalResult = minimax(newBoard, depth - 1, alpha, beta, false)
         if (evalResult.score > maxEval) {
           maxEval = evalResult.score
           bestMove = move
         }
         alpha = Math.max(alpha, evalResult.score)
-        if (beta <= alpha) break // アルファベータ枝刈り
+        if (beta <= alpha) break
       }
       return { score: maxEval, move: bestMove }
     } else {
       let minEval = Number.POSITIVE_INFINITY
       for (const move of validMoves) {
-        const newBoard = placePiece(board, move.row, move.col, "player")
+        const newBoard = placePiece(board, move.row, move.col, "black")
         const evalResult = minimax(newBoard, depth - 1, alpha, beta, true)
         if (evalResult.score < minEval) {
           minEval = evalResult.score
           bestMove = move
         }
         beta = Math.min(beta, evalResult.score)
-        if (beta <= alpha) break // アルファベータ枝刈り
+        if (beta <= alpha) break
       }
       return { score: minEval, move: bestMove }
     }
   }
 
-  // ボードの評価関数
+  // 盤面の評価関数
   function evaluateBoard(board: Board): number {
-    const playerCount = countPieces(board, "player")
-    const aiCount = countPieces(board, "ai")
+    const blackCount = countPieces(board, "black")
+    const whiteCount = countPieces(board, "white")
+    const pieceDifference = whiteCount - blackCount
 
-    // 駒の数の差
-    const pieceDifference = aiCount - playerCount
-
-    // 角の評価（角は重要）
     const corners = [
       { row: 0, col: 0 },
       { row: 0, col: 5 },
       { row: 5, col: 0 },
       { row: 5, col: 5 },
     ]
-
     let cornerScore = 0
     for (const corner of corners) {
-      if (board[corner.row][corner.col] === "ai") {
+      if (board[corner.row][corner.col] === "white") {
         cornerScore += 10
-      } else if (board[corner.row][corner.col] === "player") {
+      } else if (board[corner.row][corner.col] === "black") {
         cornerScore -= 10
       }
     }
 
-    // 辺の評価（辺も重要だが角ほどではない）
     const edges = [
-      ...Array(6)
-        .fill(0)
-        .map((_, i) => ({ row: 0, col: i })), // 上辺
-      ...Array(6)
-        .fill(0)
-        .map((_, i) => ({ row: 5, col: i })), // 下辺
-      ...Array(4)
-        .fill(0)
-        .map((_, i) => ({ row: i + 1, col: 0 })), // 左辺
-      ...Array(4)
-        .fill(0)
-        .map((_, i) => ({ row: i + 1, col: 5 })), // 右辺
+      ...Array(6).fill(0).map((_, i) => ({ row: 0, col: i })),
+      ...Array(6).fill(0).map((_, i) => ({ row: 5, col: i })),
+      ...Array(4).fill(0).map((_, i) => ({ row: i + 1, col: 0 })),
+      ...Array(4).fill(0).map((_, i) => ({ row: i + 1, col: 5 })),
     ]
-
     let edgeScore = 0
     for (const edge of edges) {
-      if (board[edge.row][edge.col] === "ai") {
+      if (board[edge.row][edge.col] === "white") {
         edgeScore += 2
-      } else if (board[edge.row][edge.col] === "player") {
+      } else if (board[edge.row][edge.col] === "black") {
         edgeScore -= 2
       }
     }
 
-    // 移動可能性（選択肢が多いほど良い）
-    const aiMobility = findValidMoves(board, "ai").length
-    const playerMobility = findValidMoves(board, "player").length
-    const mobilityScore = aiMobility - playerMobility
+    const whiteMobility = findValidMoves(board, "white").length
+    const blackMobility = findValidMoves(board, "black").length
+    const mobilityScore = whiteMobility - blackMobility
 
-    // 総合評価
     return pieceDifference * 3 + cornerScore + edgeScore + mobilityScore * 2
   }
 
-  // AIの手を処理する関数
-  useEffect(() => {
-    if (gameState.currentTurn === "ai" && !gameState.gameOver) {
-      const aiTimer = setTimeout(() => {
-        // AIの手を計算（ミニマックスアルゴリズム）
-        const depth = 4 // 探索の深さ（調整可能）
-        const result = minimax(gameState.board, depth, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true)
-
-        if (result.move) {
-          // 新しいボードを作成
-          const newBoard = placePiece(gameState.board, result.move.row, result.move.col, "ai")
-
-          // プレイヤーの有効な手を計算
-          const playerValidMoves = findValidMoves(newBoard, "player")
-
-          // ゲーム状態を更新
-          setGameState((prevState) => ({
-            board: newBoard,
-            currentTurn: playerValidMoves.length > 0 ? "player" : "ai",
-            playerScore: countPieces(newBoard, "player"),
-            aiScore: countPieces(newBoard, "ai"),
-            gameOver: playerValidMoves.length === 0 && findValidMoves(newBoard, "ai").length === 0,
-            winner:
-              playerValidMoves.length === 0 && findValidMoves(newBoard, "ai").length === 0
-                ? determineWinner(newBoard)
-                : null,
-            validMoves: playerValidMoves,
-          }))
-        } else {
-          // AIが打てる手がない場合
-          const playerValidMoves = findValidMoves(gameState.board, "player")
-          if (playerValidMoves.length === 0) {
-            // プレイヤーも打てる手がない場合、ゲーム終了
-            setGameState((prevState) => ({
-              ...prevState,
-              gameOver: true,
-              winner: determineWinner(prevState.board),
-            }))
-          } else {
-            // プレイヤーに手番を戻す
-            setGameState((prevState) => ({
-              ...prevState,
-              currentTurn: "player",
-              validMoves: playerValidMoves,
-            }))
-          }
-        }
-      }, 1000) // AIの思考時間
-
-      return () => clearTimeout(aiTimer)
-    }
-  }, [gameState])
-
-  // ゲーム終了時に勝者を決定する関数
-  function determineWinner(board: Board): "player" | "ai" | "draw" {
-    const playerCount = countPieces(board, "player")
-    const aiCount = countPieces(board, "ai")
-
-    if (playerCount > aiCount) return "player"
-    if (aiCount > playerCount) return "ai"
+  // ゲーム終了時の勝者判定
+  function determineWinner(board: Board): "black" | "white" | "draw" {
+    const blackCount = countPieces(board, "black")
+    const whiteCount = countPieces(board, "white")
+    if (blackCount > whiteCount) return "black"
+    if (whiteCount > blackCount) return "white"
     return "draw"
   }
 
-  // ゲーム終了時の処理
   useEffect(() => {
     if (gameState.gameOver && !gameState.winner) {
-      setGameState((prevState) => ({
-        ...prevState,
-        winner: determineWinner(prevState.board),
-      }))
+      updateGameState({
+        ...gameState,
+        winner: determineWinner(gameState.board),
+      })
     }
   }, [gameState.gameOver, gameState.winner])
 
+  // ===========================================================
+  // ================      Undo Move Function      ============
+  // ===========================================================
+  function handleUndo() {
+    // ここでは、最低でも初期状態＋2手（自分とAI）がある場合のみUndo可能としています
+    setHistory((prevHistory) => {
+      if (prevHistory.length >= 3) {
+        const newHistory = prevHistory.slice(0, prevHistory.length - 2)
+        const previousState = newHistory[newHistory.length - 1]
+        setGameState(previousState)
+        return newHistory
+      }
+      return prevHistory
+    })
+  }
+
+  // ===========================================================
+  // ================         Rendering UI         =============
+  // ===========================================================
   return (
     <Box
       sx={{
@@ -377,10 +430,9 @@ export default function StrangeOthello() {
         pt: 2,
       }}
     >
-      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* ゲームタイトルとルール説明を縦並びに */}
+      <Container maxWidth="sm" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* タイトルとルール */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {/* ゲームタイトル */}
           <Typography
             variant="h5"
             component="h1"
@@ -393,8 +445,6 @@ export default function StrangeOthello() {
           >
             ストレンジオセロ
           </Typography>
-
-          {/* ゲームルール説明 */}
           <Paper
             elevation={2}
             sx={{
@@ -404,8 +454,7 @@ export default function StrangeOthello() {
             }}
           >
             <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.4 }}>
-              挟んだ駒は自分の色にできます。最終的な数が多い方が勝ちです。
-              初期配置は通常のオセロとは異なり、特殊な配置になっています。
+              ・通常とは異なる初期盤面でのオセロです
             </Typography>
           </Paper>
         </Box>
@@ -421,100 +470,86 @@ export default function StrangeOthello() {
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Typography variant="body2" sx={{ color: "#333", fontWeight: "medium" }}>
-              {gameState.currentTurn === "player" ? "あなたの番です" : "AIの番です..."}
+              {gameState.currentTurn === "black" ? "あなたの番（黒）" : "AIの番（白）..."}
             </Typography>
-
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
+              {/* 黒の得点 */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Box
                   sx={{
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    backgroundColor: "#3f51b5", // プレイヤーの色（青）
+                    backgroundColor: "#000000",
                   }}
                 />
                 <Typography variant="body2" sx={{ color: "#333" }}>
-                  {gameState.playerScore}
+                  {gameState.blackScore}
                 </Typography>
               </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
+              {/* 白の得点 */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Box
                   sx={{
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    backgroundColor: "#f5f5f5", // AIの色（白）
-                    border: "1px solid #ccc",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #999",
                   }}
                 />
                 <Typography variant="body2" sx={{ color: "#333" }}>
-                  {gameState.aiScore}
+                  {gameState.whiteScore}
                 </Typography>
               </Box>
             </Box>
           </Box>
         </Paper>
 
-        {/* ゲームボード */}
+        {/* 盤面（固定幅 300px） */}
         <Paper
           elevation={3}
           sx={{
             p: 2,
             backgroundColor: "rgba(255, 255, 255, 0.85)",
             borderRadius: "8px",
+            width: "300px",
+            mx: "auto",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
             {gameState.board.map((row, rowIndex) => (
-              <Box
-                key={`row-${rowIndex}`}
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                }}
-              >
+              <Box key={`row-${rowIndex}`} sx={{ display: "flex", flexDirection: "row" }}>
                 {row.map((cell, colIndex) => (
                   <Box
                     key={`cell-${rowIndex}-${colIndex}`}
-                    onClick={() => handlePlayerMove(rowIndex, colIndex)}
+                    onClick={() => handleBlackMove(rowIndex, colIndex)}
                     sx={{
-                      width: "16.666%", // 6x6のボードなので各セルは幅の1/6
-                      paddingTop: "16.666%", // アスペクト比を1:1に保つ
+                      width: "16.666%",
+                      paddingTop: "16.666%",
                       position: "relative",
-                      backgroundColor: "#add8e6", // 薄い青色の背景
-                      border: "1px solid #90caf9",
-                      cursor: gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
-                        ? "pointer"
-                        : "default",
-                      "&:hover": {
-                        backgroundColor: gameState.validMoves.some(
-                          (move) => move.row === rowIndex && move.col === colIndex,
+                      backgroundColor: "#c8e6c9", // 背景色をライトグリーンに変更
+                      border: "1px solid #81c784", // 緑色のボーダー
+                      cursor:
+                        gameState.currentTurn === "black" &&
+                        gameState.validMoves.some(
+                          (move) => move.row === rowIndex && move.col === colIndex
                         )
-                          ? "#90caf9"
-                          : "#add8e6",
+                          ? "pointer"
+                          : "default",
+                      "&:hover": {
+                        backgroundColor:
+                          gameState.currentTurn === "black" &&
+                          gameState.validMoves.some(
+                            (move) => move.row === rowIndex && move.col === colIndex
+                          )
+                            ? "#a5d6a7" // ホバー時の少し濃い緑
+                            : "#c8e6c9",
                       },
-                      // 有効な手の場合、薄い色で表示
-                      ...(gameState.currentTurn === "player" &&
-                      gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                      ...(gameState.currentTurn === "black" &&
+                      gameState.validMoves.some(
+                        (move) => move.row === rowIndex && move.col === colIndex
+                      )
                         ? {
                             "&::after": {
                               content: '""',
@@ -525,7 +560,7 @@ export default function StrangeOthello() {
                               width: "30%",
                               height: "30%",
                               borderRadius: "50%",
-                              backgroundColor: "rgba(63, 81, 181, 0.3)", // 薄い青色
+                              backgroundColor: "rgba(0, 128, 0, 0.3)",
                             },
                           }
                         : {}),
@@ -540,8 +575,8 @@ export default function StrangeOthello() {
                           width: "80%",
                           height: "80%",
                           borderRadius: "50%",
-                          backgroundColor: cell === "player" ? "#3f51b5" : "#f5f5f5", // プレイヤーは青、AIは白
-                          border: cell === "ai" ? "1px solid #ccc" : "none",
+                          backgroundColor: cell === "black" ? "#000000" : "#ffffff",
+                          border: cell === "white" ? "1px solid #333" : "none",
                           boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                         }}
                       />
@@ -552,6 +587,46 @@ export default function StrangeOthello() {
             ))}
           </Box>
         </Paper>
+
+        {/* ゲーム中の場合：Undoボタンとタイトルへ戻るボタン */}
+        {!gameState.gameOver && (
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleUndo}
+              disabled={history.length < 3}  // 履歴が足りない場合は無効化
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.5,
+                color: "#555",
+                borderColor: "#ccc",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                fontSize: "0.8rem",
+              }}
+            >
+              1手戻る
+            </Button>
+            <Button
+              component={Link}
+              to="/"
+              variant="outlined"
+              size="small"
+              sx={{
+                borderRadius: "20px",
+                px: 3,
+                py: 0.5,
+                color: "#555",
+                borderColor: "#ccc",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                fontSize: "0.8rem",
+              }}
+            >
+              タイトルへ
+            </Button>
+          </Box>
+        )}
 
         {/* ゲーム終了時の結果表示 */}
         {gameState.gameOver && (
@@ -571,25 +646,30 @@ export default function StrangeOthello() {
               variant="body1"
               gutterBottom
               sx={{
-                color: gameState.winner === "player" ? "#4caf50" : gameState.winner === "ai" ? "#f44336" : "#ff9800",
+                color:
+                  gameState.winner === "black"
+                    ? "#4caf50"
+                    : gameState.winner === "white"
+                    ? "#f44336"
+                    : "#ff9800",
                 fontWeight: "medium",
                 mb: 2,
                 p: 1,
                 backgroundColor:
-                  gameState.winner === "player"
+                  gameState.winner === "black"
                     ? "rgba(76, 175, 80, 0.1)"
-                    : gameState.winner === "ai"
-                      ? "rgba(244, 67, 54, 0.1)"
-                      : "rgba(255, 152, 0, 0.1)",
+                    : gameState.winner === "white"
+                    ? "rgba(244, 67, 54, 0.1)"
+                    : "rgba(255, 152, 0, 0.1)",
                 borderRadius: "6px",
                 display: "inline-block",
               }}
             >
-              {gameState.winner === "player"
-                ? "あなたの勝ちです！"
-                : gameState.winner === "ai"
-                  ? "AIの勝ちです"
-                  : "引き分けです"}
+              {gameState.winner === "black"
+                ? "プレイヤーの勝ちです！"
+                : gameState.winner === "white"
+                ? "AIの勝ちです"
+                : "引き分けです"}
             </Typography>
             <Button
               variant="contained"
@@ -609,29 +689,6 @@ export default function StrangeOthello() {
               タイトルに戻る
             </Button>
           </Paper>
-        )}
-
-        {/* タイトルへ戻るボタン */}
-        {!gameState.gameOver && (
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              component={Link}
-              to="/"
-              variant="outlined"
-              size="small"
-              sx={{
-                borderRadius: "20px",
-                px: 3,
-                py: 0.5,
-                color: "#555",
-                borderColor: "#ccc",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                fontSize: "0.8rem",
-              }}
-            >
-              タイトルへ
-            </Button>
-          </Box>
         )}
       </Container>
     </Box>
