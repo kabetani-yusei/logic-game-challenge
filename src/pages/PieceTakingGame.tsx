@@ -337,25 +337,25 @@ export default function PieceTakingGame() {
     // 色に基づいたスタイル設定
     const colorConfig = {
       blue: {
-        main: "#1a237e", // 濃い青
-        light: "#3949ab", // 明るい青
-        highlight: "#bbdefb", // 非常に明るい青（ハイライト用）
-        shadow: "#0d47a1", // 影用の濃い青
-        textColor: "#fff", // 白テキスト
+        main: "#1a237e",
+        light: "#3949ab",
+        highlight: "#bbdefb",
+        shadow: "#0d47a1",
+        textColor: "#fff",
       },
       yellow: {
-        main: "#f57f17", // 濃い黄色
-        light: "#ffb300", // 明るい黄色
-        highlight: "#fff8e1", // 非常に明るい黄色（ハイライト用）
-        shadow: "#e65100", // 影用のオレンジ
-        textColor: "#333", // 黒テキスト
+        main: "#f57f17",
+        light: "#ffb300",
+        highlight: "#fff8e1",
+        shadow: "#e65100",
+        textColor: "#333",
       },
       red: {
-        main: "#b71c1c", // 濃い赤
-        light: "#e53935", // 明るい赤
-        highlight: "#ffcdd2", // 非常に明るい赤（ハイライト用）
-        shadow: "#7f0000", // 影用の非常に濃い赤
-        textColor: "#fff", // 白テキスト
+        main: "#b71c1c",
+        light: "#e53935",
+        highlight: "#ffcdd2",
+        shadow: "#7f0000",
+        textColor: "#fff",
       },
     }[color as "blue" | "yellow" | "red"]
 
@@ -392,7 +392,6 @@ export default function PieceTakingGame() {
               borderRadius: "50%",
               background: `radial-gradient(circle at 30% 30%, ${colorConfig.highlight}, transparent 70%)`,
             },
-            // 駒自体にはテキストを表示しないので子要素は無し
           }}
         />,
       )
@@ -465,7 +464,7 @@ export default function PieceTakingGame() {
               textShadow: "0 1px 1px rgba(0,0,0,0.3)",
             }}
           >
-            {count}個
+            {gameState.selectedCount}個
           </Typography>
         </Box>
       </Box>
@@ -506,16 +505,16 @@ export default function PieceTakingGame() {
           <Paper
             elevation={2}
             sx={{
-              p: 2, // パディングを増やして高さを上げる
+              p: 2,
               backgroundColor: "rgba(255, 255, 255, 0.9)",
               borderRadius: "8px",
-              minHeight: "70px", // 最小の高さを設定
+              minHeight: "70px",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.6 }}>
-              3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います。
+            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.6, ml: 15 }}>
+              ・3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います
               <br />
-              最後の1個を取った方が負けです。
+              ・最後の1個を取った方が負けです
             </Typography>
           </Paper>
         </Box>
@@ -601,7 +600,14 @@ export default function PieceTakingGame() {
           >
             {gameState.currentTurn === "player" ? (
               <>
-                <Box sx={{ display: "flex", width: "100%", gap: 2 }}>
+                {/* 親コンテナを横並びから縦並びに変更し、中央ぞろえに */}
+                <Box sx={{ 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  alignItems: "center",
+                  gap: 2,
+                  width: "100%"
+                }}>
                   {/* 色選択 */}
                   <Box
                     sx={{
@@ -610,16 +616,17 @@ export default function PieceTakingGame() {
                       p: 1,
                       backgroundColor: "rgba(240, 240, 245, 0.5)",
                       borderRadius: "8px",
-                      flex: 1,
                       justifyContent: "center",
                     }}
                   >
                     <IconButton
                       onClick={selectPrevColor}
                       size="small"
+                      disabled={getAvailableColorsFromState(gameState).length <= 1}
                       sx={{
                         backgroundColor: "rgba(0, 0, 0, 0.05)",
                         p: 0.5,
+                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
                       }}
                     >
                       <ArrowBack fontSize="small" sx={{ color: "#333" }} />
@@ -659,9 +666,11 @@ export default function PieceTakingGame() {
                     <IconButton
                       onClick={selectNextColor}
                       size="small"
+                      disabled={getAvailableColorsFromState(gameState).length <= 1}
                       sx={{
                         backgroundColor: "rgba(0, 0, 0, 0.05)",
                         p: 0.5,
+                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
                       }}
                     >
                       <ArrowForward fontSize="small" sx={{ color: "#333" }} />
@@ -676,7 +685,6 @@ export default function PieceTakingGame() {
                       p: 1,
                       backgroundColor: "rgba(240, 240, 245, 0.5)",
                       borderRadius: "8px",
-                      flex: 1,
                       justifyContent: "center",
                     }}
                   >
@@ -687,6 +695,7 @@ export default function PieceTakingGame() {
                       sx={{
                         backgroundColor: "rgba(0, 0, 0, 0.05)",
                         p: 0.5,
+                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
                       }}
                     >
                       <ArrowDownward fontSize="small" sx={{ color: "#333" }} />
@@ -710,6 +719,7 @@ export default function PieceTakingGame() {
                       sx={{
                         backgroundColor: "rgba(0, 0, 0, 0.05)",
                         p: 0.5,
+                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
                       }}
                     >
                       <ArrowUpward fontSize="small" sx={{ color: "#333" }} />
@@ -717,7 +727,7 @@ export default function PieceTakingGame() {
                   </Box>
                 </Box>
 
-                <Box sx={{ display: "flex", gap: 2, width: "100%", justifyContent: "center", mt: 2 }}>
+                <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 2 }}>
                   <Button
                     variant="contained"
                     onClick={confirmPlayerMove}
