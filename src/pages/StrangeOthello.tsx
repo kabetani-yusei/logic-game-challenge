@@ -599,6 +599,10 @@ export default function Othello() {
                 backgroundColor: "rgba(255, 255, 255, 0.7)",
                 fontSize: "0.8rem",
                 width: { xs: "100%", sm: "auto" },
+                "&.Mui-disabled": {
+                  opacity: 0.5, // 無効状態の透明度
+                  color: "#999", // 無効状態のテキスト色
+                },
               }}
             >
               1手戻る

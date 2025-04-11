@@ -330,11 +330,10 @@ export default function PieceTakingGame() {
     })
   }
 
-  // 駒を描画する関数
+  // 駒を描画する関数（クリックでその色を選択、ただし駒が 0 個なら選択不可）
   const renderPieces = (color: string, count: number, gridArea: any, isSelected: boolean) => {
     const pieces = []
 
-    // 色に基づいたスタイル設定
     const colorConfig = {
       blue: {
         main: "#1a237e",
@@ -359,14 +358,12 @@ export default function PieceTakingGame() {
       },
     }[color as "blue" | "yellow" | "red"]
 
-    // 選択状態に基づいた枠のスタイル
     const borderColor = isSelected ? "#4CAF50" : "#9E9E9E"
     const borderWidth = isSelected ? "3px" : "1px"
     const boxShadow = isSelected
       ? `0 0 10px rgba(76, 175, 80, 0.5), inset 0 0 5px rgba(76, 175, 80, 0.3)`
       : `0 2px 4px rgba(0, 0, 0, 0.1)`
 
-    // 駒を生成
     for (let i = 0; i < count && i < 9; i++) {
       pieces.push(
         <Box
@@ -393,12 +390,21 @@ export default function PieceTakingGame() {
               background: `radial-gradient(circle at 30% 30%, ${colorConfig.highlight}, transparent 70%)`,
             },
           }}
-        />,
+        />
       )
     }
 
     return (
       <Box
+        onClick={() => {
+          if (count > 0) {
+            setGameState((prev) => ({
+              ...prev,
+              selectedColor: color as "blue" | "yellow" | "red",
+              selectedCount: 1,
+            }))
+          }
+        }}
         sx={{
           gridArea,
           position: "relative",
@@ -411,17 +417,18 @@ export default function PieceTakingGame() {
           flexDirection: "column",
           transition: "all 0.3s ease",
           overflow: "hidden",
+          cursor: count > 0 ? "pointer" : "default",
           "&::before": isSelected
             ? {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "3px",
-              background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-              animation: "pulse 1.5s infinite",
-            }
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
+                animation: "pulse 1.5s infinite",
+              }
             : {},
           "@keyframes pulse": {
             "0%": { opacity: 0.6 },
@@ -517,7 +524,6 @@ export default function PieceTakingGame() {
               ・最後の1個を取った方が負けです
             </Typography>
           </Paper>
-
         </Box>
 
         {/* ゲームボード */}
@@ -541,19 +547,19 @@ export default function PieceTakingGame() {
               "blue",
               gameState.bluePieces,
               { xs: "1 / 1 / 2 / 2", sm: "1 / 1 / 2 / 2" },
-              gameState.selectedColor === "blue",
+              gameState.selectedColor === "blue"
             )}
             {renderPieces(
               "yellow",
               gameState.yellowPieces,
               { xs: "2 / 1 / 3 / 2", sm: "1 / 2 / 2 / 3" },
-              gameState.selectedColor === "yellow",
+              gameState.selectedColor === "yellow"
             )}
             {renderPieces(
               "red",
               gameState.redPieces,
               { xs: "3 / 1 / 4 / 2", sm: "1 / 3 / 2 / 4" },
-              gameState.selectedColor === "red",
+              gameState.selectedColor === "red"
             )}
           </Box>
 
@@ -616,7 +622,6 @@ export default function PieceTakingGame() {
           >
             {gameState.currentTurn === "player" ? (
               <>
-                {/* 親コンテナを横並びから縦並びに変更し、中央ぞろえに */}
                 <Box
                   sx={{
                     display: "flex",
