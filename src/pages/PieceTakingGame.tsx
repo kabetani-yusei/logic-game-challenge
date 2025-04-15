@@ -422,11 +422,28 @@ export default function PieceTakingGame() {
       <Box
         onClick={() => {
           if (count > 0) {
-            setGameState((prev) => ({
-              ...prev,
-              selectedColor: color as "blue" | "yellow" | "red",
-              selectedCount: 1,
-            }))
+            setGameState((prev) => {
+              // 既に同じ色が選択されている場合
+              if (prev.selectedColor === color) {
+                // 選択数が現状の駒の総数未満なら 1 増やす
+                if (prev.selectedCount < count) {
+                  return {
+                    ...prev,
+                    selectedCount: prev.selectedCount + 1,
+                  }
+                } else {
+                  // すでに駒の個数と同じなら変化なし
+                  return prev
+                }
+              } else {
+                // 違う色がクリックされた場合は選択状態を変更し、選択数を 1 にセット
+                return {
+                  ...prev,
+                  selectedColor: color as "blue" | "yellow" | "red",
+                  selectedCount: 1,
+                }
+              }
+            })
           }
         }}
         sx={{
@@ -444,15 +461,15 @@ export default function PieceTakingGame() {
           cursor: count > 0 ? "pointer" : "default",
           "&::before": isSelected
             ? {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "3px",
-              background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-              animation: "pulse 1.5s infinite",
-            }
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
+                animation: "pulse 1.5s infinite",
+              }
             : {},
           "@keyframes pulse": {
             "0%": { opacity: 0.6 },
