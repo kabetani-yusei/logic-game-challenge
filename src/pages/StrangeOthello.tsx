@@ -311,7 +311,7 @@ export default function Othello() {
     }
   }
 
-  // 盤面の評価関数
+  // 盤面の評価関数（もともとは白側有利なら正なので、黒側有利に表示するため最終的に表示時に符号反転します）
   function evaluateBoard(board: Board): number {
     const blackCount = countPieces(board, "black")
     const whiteCount = countPieces(board, "white")
@@ -398,6 +398,26 @@ export default function Othello() {
       return prevHistory
     })
   }
+
+  // ===========================================================
+  // ================   各有効手のMinimax評価の計算   ============
+  // ===========================================================
+  // 現在の盤面から、指定セルに黒を置いた場合の最終的な局面評価（黒側視点）を計算する関数
+  function getMinimaxEvaluationForMove(row: number, col: number): number {
+    // 黒がそのセルに置いた場合の新たな盤面を作成
+    const newBoard = placePiece(gameState.board, row, col, "black")
+    // 次は白の手番になるため、maximizingPlayer は true
+    const result = minimax(newBoard, 4, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true)
+    // evaluateBoard は白有利が正なので、黒側視点にするには符号を反転
+    const moveScore = -result.score
+    return moveScore
+  }
+
+  // 各有効手についての評価をひとまとめに計算（再描画のたびに計算されます）
+  const validMoveEvaluations: { [key: string]: number } = {}
+  gameState.validMoves.forEach((move) => {
+    validMoveEvaluations[`${move.row}-${move.col}`] = getMinimaxEvaluationForMove(move.row, move.col)
+  })
 
   // ===========================================================
   // ================         Rendering UI         ============
@@ -521,8 +541,8 @@ export default function Othello() {
                       width: "16.666%",
                       paddingTop: "16.666%",
                       position: "relative",
-                      backgroundColor: "#c8e6c9", // 背景色をライトグリーンに変更
-                      border: "1px solid #81c784", // 緑色のボーダー
+                      backgroundColor: "#c8e6c9",
+                      border: "1px solid #81c784",
                       cursor:
                         gameState.currentTurn === "black" &&
                         gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
@@ -532,7 +552,7 @@ export default function Othello() {
                         backgroundColor:
                           gameState.currentTurn === "black" &&
                           gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
-                            ? "#a5d6a7" // ホバー時の少し濃い緑
+                            ? "#a5d6a7"
                             : "#c8e6c9",
                       },
                       ...(gameState.currentTurn === "black" &&
@@ -553,6 +573,7 @@ export default function Othello() {
                         : {}),
                     }}
                   >
+                    {/* もしセルに駒があるなら描画 */}
                     {cell !== "empty" && (
                       <Box
                         sx={{
@@ -567,6 +588,26 @@ export default function Othello() {
                           boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                         }}
                       />
+                    )}
+                    {/* 該当セルが有効手なら、Minimax評価（黒視点）を上書き表示 */}
+                    {validMoveEvaluations[`${rowIndex}-${colIndex}`] !== undefined && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          pointerEvents: "none",
+                          fontWeight: "bold",
+                          color: validMoveEvaluations[`${rowIndex}-${colIndex}`] >= 0 ? "green" : "red",
+                          textShadow: "0 1px 2px rgba(255,255,255,0.8)",
+                        }}
+                      >
+                        {validMoveEvaluations[`${rowIndex}-${colIndex}`] >= 0
+                          ? `＋${validMoveEvaluations[`${rowIndex}-${colIndex}`]}`
+                          : validMoveEvaluations[`${rowIndex}-${colIndex}`]}
+                      </Typography>
                     )}
                   </Box>
                 ))}
@@ -601,8 +642,8 @@ export default function Othello() {
                 fontSize: "0.8rem",
                 width: { xs: "100%", sm: "auto" },
                 "&.Mui-disabled": {
-                  opacity: 0.5, // 無効状態の透明度
-                  color: "#999", // 無効状態のテキスト色
+                  opacity: 0.5,
+                  color: "#999",
                 },
               }}
             >
