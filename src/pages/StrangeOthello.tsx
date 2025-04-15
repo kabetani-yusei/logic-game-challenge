@@ -655,8 +655,8 @@ export default function Othello() {
                   gameState.winner === "black"
                     ? "rgba(76, 175, 80, 0.1)"
                     : gameState.winner === "white"
-                    ? "rgba(244, 67, 54, 0.1)"
-                    : "rgba(255, 152, 0, 0.1)",
+                      ? "rgba(244, 67, 54, 0.1)"
+                      : "rgba(255, 152, 0, 0.1)",
                 borderRadius: "6px",
                 display: "inline-block",
               }}
@@ -664,26 +664,63 @@ export default function Othello() {
               {gameState.winner === "black"
                 ? "プレイヤーの勝ちです！"
                 : gameState.winner === "white"
-                ? "AIの勝ちです"
-                : "引き分けです"}
+                  ? "AIの勝ちです"
+                  : "引き分けです"}
             </Typography>
-            <Button
-              variant="contained"
-              component={Link}
-              to="/"
-              size="small"
+
+            <Box
               sx={{
-                borderRadius: "20px",
-                px: 3,
-                py: 0.8,
-                backgroundColor: "#3f51b5",
-                color: "#fff",
-                fontWeight: "bold",
-                boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                display: "flex",
+                gap: 2,
+                justifyContent: "center",
+                mt: 2,
+                flexDirection: { xs: "column", sm: "row" },
               }}
             >
-              タイトルに戻る
-            </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  // ゲームをリセット
+                  setGameState(initialGameState)
+                  setHistory([initialGameState])
+                }}
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#4caf50",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                  "&:hover": {
+                    backgroundColor: "#388e3c",
+                  },
+                }}
+              >
+                やり直す
+              </Button>
+
+              <Button
+                variant="contained"
+                component={Link}
+                to="/"
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#3f51b5",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                タイトルに戻る
+              </Button>
+            </Box>
           </Paper>
         )}
       </Container>

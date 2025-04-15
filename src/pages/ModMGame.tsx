@@ -241,7 +241,7 @@ export default function ModMGame() {
               sx={{
                 color: "#333",
                 lineHeight: 1.4,
-                ml: { xs: 0, sm: 15 } // 0 margin for smartphones, 15 for larger screens
+                ml: { xs: 0, sm: 15 }, // 0 margin for smartphones, 15 for larger screens
               }}
             >
               1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）
@@ -251,7 +251,6 @@ export default function ModMGame() {
               3. 両者がすべてのカードを出し切った場合は、AIの勝ちです。
             </Typography>
           </Paper>
-
         </Box>
 
         {/* ゲーム情報とAIの手札を横並びに（スマホでは縦並び） */}
@@ -546,24 +545,60 @@ export default function ModMGame() {
             >
               {gameState.winner === "player" ? "あなたの勝ちです！" : "AI の勝ちです"}
             </Typography>
-            <Button
-              component={Link}
-              to="/"
-              variant="contained"
-              size="small"
+
+            <Box
               sx={{
-                borderRadius: "20px",
-                px: 3,
-                py: 0.8,
-                backgroundColor: "#3f51b5",
-                color: "#fff",
-                fontWeight: "bold",
-                boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
-                width: { xs: "100%", sm: "auto" },
+                display: "flex",
+                gap: 2,
+                justifyContent: "center",
+                mt: 2,
+                flexDirection: { xs: "column", sm: "row" },
               }}
             >
-              タイトルに戻る
-            </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  // ゲームをリセット
+                  setGameState(initializeGame())
+                  setHistory([])
+                }}
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#4caf50",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                  "&:hover": {
+                    backgroundColor: "#388e3c",
+                  },
+                }}
+              >
+                やり直す
+              </Button>
+
+              <Button
+                component={Link}
+                to="/"
+                variant="contained"
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#3f51b5",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                タイトルに戻る
+              </Button>
+            </Box>
           </Paper>
         )}
 

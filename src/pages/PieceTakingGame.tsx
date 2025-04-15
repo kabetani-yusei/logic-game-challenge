@@ -414,7 +414,7 @@ export default function PieceTakingGame() {
               background: `radial-gradient(circle at 30% 30%, ${colorConfig.highlight}, transparent 70%)`,
             },
           }}
-        />
+        />,
       )
     }
 
@@ -588,19 +588,19 @@ export default function PieceTakingGame() {
               "blue",
               gameState.bluePieces,
               { xs: "1 / 1 / 2 / 2", sm: "1 / 1 / 2 / 2" },
-              gameState.selectedColor === "blue"
+              gameState.selectedColor === "blue",
             )}
             {renderPieces(
               "yellow",
               gameState.yellowPieces,
               { xs: "2 / 1 / 3 / 2", sm: "1 / 2 / 2 / 3" },
-              gameState.selectedColor === "yellow"
+              gameState.selectedColor === "yellow",
             )}
             {renderPieces(
               "red",
               gameState.redPieces,
               { xs: "3 / 1 / 4 / 2", sm: "1 / 3 / 2 / 4" },
-              gameState.selectedColor === "red"
+              gameState.selectedColor === "red",
             )}
           </Box>
 
@@ -917,23 +917,69 @@ export default function PieceTakingGame() {
               {gameState.winner === "player" ? "あなたの勝ちです！" : "AIの勝ちです"}
             </Typography>
 
-            <Button
-              variant="contained"
-              component={Link}
-              to="/"
-              size="small"
+            <Box
               sx={{
-                borderRadius: "20px",
-                px: 3,
-                py: 0.8,
-                backgroundColor: "#3f51b5",
-                color: "#fff",
-                fontWeight: "bold",
-                boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                display: "flex",
+                gap: 2,
+                justifyContent: "center",
+                mt: 2,
+                flexDirection: { xs: "column", sm: "row" },
               }}
             >
-              タイトルに戻る
-            </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  // ゲームをリセット
+                  setGameState({
+                    bluePieces: 4,
+                    yellowPieces: 3,
+                    redPieces: 2,
+                    currentTurn: "player",
+                    selectedColor: "blue",
+                    selectedCount: 1,
+                    gameOver: false,
+                    winner: null,
+                    lastAIMove: null,
+                  })
+                  setHistory([])
+                }}
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#4caf50",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                  "&:hover": {
+                    backgroundColor: "#388e3c",
+                  },
+                }}
+              >
+                やり直す
+              </Button>
+
+              <Button
+                variant="contained"
+                component={Link}
+                to="/"
+                size="small"
+                sx={{
+                  borderRadius: "20px",
+                  px: 3,
+                  py: 0.8,
+                  backgroundColor: "#3f51b5",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                タイトルに戻る
+              </Button>
+            </Box>
           </Paper>
         )}
 
