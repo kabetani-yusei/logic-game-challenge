@@ -206,43 +206,26 @@ export default function ModMGame() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "flex-start",
-        background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #b9f6ca 100%)",
-        p: 1,
-        pt: 2,
+        bgcolor: "background.default",
+        p: { xs: 1.5, sm: 3 },
+        pt: { xs: 3, sm: 4 },
       }}
     >
-      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2, px: { xs: 1, sm: 2 } }}>
-        {/* ゲームタイトルとルール説明を縦並びに */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {/* ゲームタイトル */}
+      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2.5, px: { xs: 1, sm: 2 } }}>
+        {/* ゲームタイトルとルール説明 */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Typography
             variant="h5"
             component="h1"
-            sx={{
-              color: "#2e7d32",
-              fontWeight: "bold",
-              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-              textAlign: "center",
-            }}
+            sx={{ color: "text.primary", textAlign: "center" }}
           >
             mod Mゲーム
           </Typography>
 
-          <Paper
-            elevation={2}
-            sx={{
-              p: 1.5,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-            }}
-          >
+          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
             <Typography
               variant="body2"
-              sx={{
-                color: "#333",
-                lineHeight: 1.4,
-                ml: { xs: 0, sm: 15 }, // 0 margin for smartphones, 15 for larger screens
-              }}
+              sx={{ color: "text.secondary", lineHeight: 1.7, ml: { xs: 0, sm: 15 } }}
             >
               1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）
               <br />
@@ -253,79 +236,56 @@ export default function ModMGame() {
           </Paper>
         </Box>
 
-        {/* ゲーム情報とAIの手札を横並びに（スマホでは縦並び） */}
+        {/* ゲーム情報とAIの手札 */}
         <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
-          {/* ゲーム情報の表示 */}
           <Paper
-            elevation={3}
             sx={{
-              p: 1.5,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
+              p: 2,
+              border: "1px solid",
+              borderColor: "divider",
               flex: 1,
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
             }}
           >
-            <Typography variant="body2" sx={{ color: "#333", fontWeight: "medium", textAlign: "center" }}>
+            <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 500, textAlign: "center" }}>
               {gameState.message}
             </Typography>
             {gameState.lastMove && (
-              <Typography variant="caption" sx={{ color: "#666", mt: 0.5, textAlign: "center" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, textAlign: "center" }}>
                 {gameState.lastMove}
               </Typography>
             )}
           </Paper>
 
-          {/* AI の手札 */}
-          <Paper
-            elevation={3}
-            sx={{
-              p: 1.5,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-              flex: 1,
-            }}
-          >
-            <Typography variant="body2" gutterBottom sx={{ color: "#333", fontWeight: "medium", textAlign: "center" }}>
+          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", flex: 1 }}>
+            <Typography variant="body2" gutterBottom sx={{ color: "text.primary", fontWeight: 500, textAlign: "center" }}>
               AI の手札
             </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 1,
-                justifyContent: "center",
-              }}
-            >
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center" }}>
               {gameState.aiCards.length > 0 ? (
                 gameState.aiCards.map((card) => (
-                  <Button
+                  <Box
                     key={card}
-                    variant="contained"
-                    disabled
-                    size="small"
                     sx={{
-                      minWidth: { xs: "28px", sm: "32px" },
-                      height: { xs: "28px", sm: "32px" },
+                      minWidth: { xs: 32, sm: 36 },
+                      height: { xs: 32, sm: 36 },
                       borderRadius: "50%",
-                      backgroundColor: "#d32f2f",
-                      color: "#f0f0f0",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                      "&.Mui-disabled": {
-                        backgroundColor: "#d32f2f",
-                        color: "#f0f0f0",
-                        opacity: 0.9,
-                      },
-                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      backgroundColor: "#dc2626",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 600,
+                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
                     }}
                   >
                     {card}
-                  </Button>
+                  </Box>
                 ))
               ) : (
-                <Typography variant="caption" sx={{ color: "#555" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   手札がありません
                 </Typography>
               )}
@@ -333,16 +293,9 @@ export default function ModMGame() {
           </Paper>
         </Box>
 
-        {/* 場に出されたカードと合計を同一のBoxに配置（スマホでは縦並び） */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 1.5,
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "8px",
-          }}
-        >
-          <Typography variant="body2" gutterBottom sx={{ color: "#333", fontWeight: "medium", textAlign: "center" }}>
+        {/* 場に出されたカードと合計 */}
+        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
+          <Typography variant="body2" gutterBottom sx={{ color: "text.primary", fontWeight: 500, textAlign: "center" }}>
             場に出されたカード
           </Typography>
           <Box
@@ -354,7 +307,6 @@ export default function ModMGame() {
               gap: { xs: 2, sm: 0 },
             }}
           >
-            {/* 場に出されたカード */}
             <Box
               sx={{
                 display: "flex",
@@ -370,31 +322,29 @@ export default function ModMGame() {
                   <Box
                     key={`played-${index}`}
                     sx={{
-                      width: { xs: "24px", sm: "28px" },
-                      height: { xs: "24px", sm: "28px" },
-                      borderRadius: "4px",
-                      backgroundColor: gameState.playedBy[index] === "ai" ? "#ffcdd2" : "#bbdefb", // AIは赤色、プレイヤーは青色
-                      border: `1px solid ${gameState.playedBy[index] === "ai" ? "#ef9a9a" : "#90caf9"}`,
+                      width: { xs: 28, sm: 32 },
+                      height: { xs: 28, sm: 32 },
+                      borderRadius: 1.5,
+                      backgroundColor: gameState.playedBy[index] === "ai" ? "#fee2e2" : "#dbeafe",
+                      border: `1px solid ${gameState.playedBy[index] === "ai" ? "#fca5a5" : "#93c5fd"}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontWeight: "bold",
-                      color: "#333",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      fontWeight: 600,
+                      color: "#2d3142",
+                      fontSize: { xs: "0.8rem", sm: "0.9rem" },
                     }}
                   >
                     {card}
                   </Box>
                 ))
               ) : (
-                <Typography variant="caption" sx={{ color: "#555" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   まだカードが出されていません
                 </Typography>
               )}
             </Box>
 
-            {/* 合計と余り */}
             <Box
               sx={{
                 display: "flex",
@@ -402,17 +352,18 @@ export default function ModMGame() {
                 alignItems: "center",
                 justifyContent: "center",
                 flex: 1,
-                borderLeft: { xs: "none", sm: "1px dashed #ccc" },
-                borderTop: { xs: "1px dashed #ccc", sm: "none" },
+                borderLeft: { xs: "none", sm: "1px dashed" },
+                borderTop: { xs: "1px dashed", sm: "none" },
+                borderColor: "divider",
                 pl: { xs: 0, sm: 2 },
                 pt: { xs: 2, sm: 0 },
                 width: { xs: "100%", sm: "auto" },
               }}
             >
-              <Typography variant="caption" sx={{ color: "#555", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5 }}>
                 合計: {gameState.sum}
               </Typography>
-              <Typography variant="caption" sx={{ color: "#555", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", mb: 0.5 }}>
                 9で割った余り
               </Typography>
               <Box
@@ -420,14 +371,13 @@ export default function ModMGame() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
+                  width: 44,
+                  height: 44,
                   borderRadius: "50%",
-                  backgroundColor: "#4caf50",
+                  backgroundColor: "#059669",
                   color: "#fff",
-                  fontWeight: "bold",
+                  fontWeight: 700,
                   fontSize: "1.2rem",
-                  boxShadow: "0 2px 8px rgba(76, 175, 80, 0.4)",
                 }}
               >
                 {gameState.sum % gameState.m}
@@ -436,28 +386,12 @@ export default function ModMGame() {
           </Box>
         </Paper>
 
-        {/* プレイヤー（あなた）の手札エリア */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 1.5,
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="body2" gutterBottom sx={{ color: "#333", fontWeight: "medium" }}>
+        {/* プレイヤーの手札エリア */}
+        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", textAlign: "center" }}>
+          <Typography variant="body2" gutterBottom sx={{ color: "text.primary", fontWeight: 500 }}>
             あなたの手札
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              justifyContent: "center",
-              mb: 1.5,
-            }}
-          >
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "center", mb: 2 }}>
             {gameState.playerCards.length > 0 ? (
               gameState.playerCards.map((card) => (
                 <Button
@@ -467,48 +401,42 @@ export default function ModMGame() {
                   disabled={gameState.currentTurn !== "player" || gameState.gameOver}
                   size="small"
                   sx={{
-                    minWidth: { xs: "32px", sm: "36px" },
-                    height: { xs: "32px", sm: "36px" },
-                    borderRadius: "6px",
-                    backgroundColor: "#3f51b5",
-                    color: "#f0f0f0",
-                    fontWeight: "bold",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                    transition: "all 0.2s ease",
+                    minWidth: { xs: 36, sm: 40 },
+                    height: { xs: 36, sm: 40 },
+                    borderRadius: 2,
+                    backgroundColor: "#2d3142",
+                    color: "#fff",
+                    fontWeight: 600,
+                    transition: "all 0.15s ease",
                     "&:hover": {
-                      backgroundColor: "#303f9f",
+                      backgroundColor: "#4f5d75",
                       transform: "translateY(-2px)",
-                      boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
                     },
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    fontSize: { xs: "0.85rem", sm: "0.95rem" },
                   }}
                 >
                   {card}
                 </Button>
               ))
             ) : (
-              <Typography variant="caption" sx={{ color: "#555" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 手札がありません
               </Typography>
             )}
           </Box>
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={handleUndo}
             disabled={history.length < 2}
             size="small"
             sx={{
-              backgroundColor: "#78909c",
-              color: "#fff",
-              borderRadius: "20px",
-              px: 2,
+              borderRadius: 10,
+              px: 3,
               py: 0.5,
-              fontSize: "0.8rem",
-              "&:hover": { backgroundColor: "#546e7a" },
-              "&.Mui-disabled": {
-                backgroundColor: "#cfd8dc",
-                color: "#90a4ae",
-              },
+              color: "text.secondary",
+              borderColor: "divider",
+              fontSize: "0.85rem",
+              "&:hover": { borderColor: "text.secondary" },
               width: { xs: "100%", sm: "auto" },
             }}
           >
@@ -518,28 +446,20 @@ export default function ModMGame() {
 
         {/* ゲーム終了時の結果表示 */}
         {gameState.gameOver && (
-          <Paper
-            elevation={3}
-            sx={{
-              p: 2,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="h6" gutterBottom sx={{ color: "#333", fontWeight: "bold" }}>
+          <Paper sx={{ p: 3, border: "1px solid", borderColor: "divider", textAlign: "center" }}>
+            <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
               ゲーム終了
             </Typography>
             <Typography
               variant="body1"
               gutterBottom
               sx={{
-                color: gameState.winner === "player" ? "#4caf50" : "#f44336",
-                fontWeight: "medium",
+                color: gameState.winner === "player" ? "#059669" : "#dc2626",
+                fontWeight: 600,
                 mb: 2,
-                p: 1,
-                backgroundColor: gameState.winner === "player" ? "rgba(76, 175, 80, 0.1)" : "rgba(244, 67, 54, 0.1)",
-                borderRadius: "6px",
+                p: 1.5,
+                backgroundColor: gameState.winner === "player" ? "#ecfdf5" : "#fef2f2",
+                borderRadius: 2,
                 display: "inline-block",
               }}
             >
@@ -558,23 +478,19 @@ export default function ModMGame() {
               <Button
                 variant="contained"
                 onClick={() => {
-                  // ゲームをリセット
                   setGameState(initializeGame())
                   setHistory([])
                 }}
                 size="small"
                 sx={{
-                  borderRadius: "20px",
+                  borderRadius: 10,
                   px: 3,
-                  py: 0.8,
-                  backgroundColor: "#4caf50",
+                  py: 1,
+                  backgroundColor: "#059669",
                   color: "#fff",
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
+                  fontWeight: 600,
                   width: { xs: "100%", sm: "auto" },
-                  "&:hover": {
-                    backgroundColor: "#388e3c",
-                  },
+                  "&:hover": { backgroundColor: "#047857" },
                 }}
               >
                 やり直す
@@ -586,14 +502,14 @@ export default function ModMGame() {
                 variant="contained"
                 size="small"
                 sx={{
-                  borderRadius: "20px",
+                  borderRadius: 10,
                   px: 3,
-                  py: 0.8,
-                  backgroundColor: "#3f51b5",
+                  py: 1,
+                  backgroundColor: "#2d3142",
                   color: "#fff",
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                  fontWeight: 600,
                   width: { xs: "100%", sm: "auto" },
+                  "&:hover": { backgroundColor: "#4f5d75" },
                 }}
               >
                 タイトルに戻る
@@ -611,13 +527,13 @@ export default function ModMGame() {
               variant="outlined"
               size="small"
               sx={{
-                borderRadius: "20px",
+                borderRadius: 10,
                 px: 3,
                 py: 0.5,
-                color: "#555",
-                borderColor: "#ccc",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                fontSize: "0.8rem",
+                color: "text.secondary",
+                borderColor: "divider",
+                fontSize: "0.85rem",
+                "&:hover": { borderColor: "text.secondary" },
                 width: { xs: "100%", sm: "auto" },
               }}
             >

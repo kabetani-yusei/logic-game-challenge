@@ -1,0 +1,14 @@
+allowBuilds:
+  esbuild: true
+  fsevents: false
+
+blockExoticSubdeps: true
+engineStrict: true
+minimumReleaseAge: 4320
+nodeVersion: 22.19.0
+packageManagerStrictVersion: true
+strictDepBuilds: true
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - semver
+useNodeVersion: 22.19.0

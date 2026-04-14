@@ -354,65 +354,29 @@ export default function PieceTakingGame() {
     })
   }
 
+  // 駒の色設定
+  const pieceColors = {
+    blue: { main: "#3b5998", light: "#5b7dc0", shadow: "#2c4373" },
+    yellow: { main: "#d4a017", light: "#e6b830", shadow: "#b8860b" },
+    red: { main: "#c0392b", light: "#e05544", shadow: "#8b1a10" },
+  }
+
   // 駒を描画する関数（クリックでその色を選択、ただし駒が 0 個なら選択不可）
   const renderPieces = (color: string, count: number, gridArea: any, isSelected: boolean) => {
     const pieces = []
-
-    const colorConfig = {
-      blue: {
-        main: "#1a237e",
-        light: "#3949ab",
-        highlight: "#bbdefb",
-        shadow: "#0d47a1",
-        textColor: "#fff",
-      },
-      yellow: {
-        main: "#f57f17",
-        light: "#ffb300",
-        highlight: "#fff8e1",
-        shadow: "#e65100",
-        textColor: "#333",
-      },
-      red: {
-        main: "#b71c1c",
-        light: "#e53935",
-        highlight: "#ffcdd2",
-        shadow: "#7f0000",
-        textColor: "#fff",
-      },
-    }[color as "blue" | "yellow" | "red"]
-
-    const borderColor = isSelected ? "#4CAF50" : "#9E9E9E"
-    const borderWidth = isSelected ? "3px" : "1px"
-    const boxShadow = isSelected
-      ? `0 0 10px rgba(76, 175, 80, 0.5), inset 0 0 5px rgba(76, 175, 80, 0.3)`
-      : `0 2px 4px rgba(0, 0, 0, 0.1)`
+    const config = pieceColors[color as "blue" | "yellow" | "red"]
 
     for (let i = 0; i < count && i < 9; i++) {
       pieces.push(
         <Box
           key={`${color}-${i}`}
           sx={{
-            width: { xs: 20, sm: 24 },
-            height: { xs: 20, sm: 24 },
+            width: { xs: 22, sm: 26 },
+            height: { xs: 22, sm: 26 },
             borderRadius: "50%",
-            backgroundColor: colorConfig.main,
-            boxShadow: `0 2px 4px rgba(0,0,0,0.3), inset 0 -2px 2px ${colorConfig.shadow}, inset 0 2px 2px ${colorConfig.light}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            backgroundColor: config.main,
+            boxShadow: `0 2px 4px rgba(0,0,0,0.2), inset 0 -2px 2px ${config.shadow}, inset 0 2px 2px ${config.light}`,
             margin: "2px",
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              top: 4,
-              left: 4,
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: `radial-gradient(circle at 30% 30%, ${colorConfig.highlight}, transparent 70%)`,
-            },
           }}
         />,
       )
@@ -423,20 +387,13 @@ export default function PieceTakingGame() {
         onClick={() => {
           if (count > 0) {
             setGameState((prev) => {
-              // 既に同じ色が選択されている場合
               if (prev.selectedColor === color) {
-                // 選択数が現状の駒の総数未満なら 1 増やす
                 if (prev.selectedCount < count) {
-                  return {
-                    ...prev,
-                    selectedCount: prev.selectedCount + 1,
-                  }
+                  return { ...prev, selectedCount: prev.selectedCount + 1 }
                 } else {
-                  // すでに駒の個数と同じなら変化なし
                   return prev
                 }
               } else {
-                // 違う色がクリックされた場合は選択状態を変更し、選択数を 1 にセット
                 return {
                   ...prev,
                   selectedColor: color as "blue" | "yellow" | "red",
@@ -450,32 +407,15 @@ export default function PieceTakingGame() {
           gridArea,
           position: "relative",
           height: { xs: 80, sm: 100 },
-          border: `${borderWidth} solid ${borderColor}`,
-          borderRadius: "6px",
-          backgroundColor: isSelected ? "rgba(220, 237, 200, 0.3)" : "rgba(240, 240, 245, 0.2)",
-          boxShadow,
+          border: isSelected ? "2px solid #059669" : "1px solid",
+          borderColor: isSelected ? "#059669" : "divider",
+          borderRadius: 3,
+          backgroundColor: isSelected ? "#ecfdf5" : "#fafaf9",
           display: "flex",
           flexDirection: "column",
-          transition: "all 0.3s ease",
+          transition: "all 0.2s ease",
           overflow: "hidden",
           cursor: count > 0 ? "pointer" : "default",
-          "&::before": isSelected
-            ? {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "3px",
-                background: "linear-gradient(90deg, transparent, #4CAF50, transparent)",
-                animation: "pulse 1.5s infinite",
-              }
-            : {},
-          "@keyframes pulse": {
-            "0%": { opacity: 0.6 },
-            "50%": { opacity: 1 },
-            "100%": { opacity: 0.6 },
-          },
         }}
       >
         <Box
@@ -484,7 +424,7 @@ export default function PieceTakingGame() {
             flexWrap: "wrap",
             justifyContent: "center",
             alignItems: "center",
-            padding: "5px",
+            padding: "6px",
             flex: 1,
           }}
         >
@@ -496,20 +436,19 @@ export default function PieceTakingGame() {
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: isSelected ? "rgba(76, 175, 80, 0.8)" : "rgba(158, 158, 158, 0.7)",
+            backgroundColor: isSelected ? "#059669" : "#9ca3af",
             padding: "2px 0",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            transition: "all 0.3s ease",
+            transition: "all 0.2s ease",
           }}
         >
           <Typography
             sx={{
               color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 600,
               fontSize: { xs: "0.7rem", sm: "0.8rem" },
-              textShadow: "0 1px 1px rgba(0,0,0,0.3)",
             }}
           >
             {count}個
@@ -527,39 +466,24 @@ export default function PieceTakingGame() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "flex-start",
-        background: "linear-gradient(135deg, #e0f7fa 0%, #b3e5fc 50%, #bbdefb 100%)",
-        p: 1,
-        pt: 2,
+        bgcolor: "background.default",
+        p: { xs: 1.5, sm: 3 },
+        pt: { xs: 3, sm: 4 },
       }}
     >
-      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2, px: { xs: 1, sm: 2 } }}>
-        {/* ゲームタイトルとルール説明を縦並びに */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {/* ゲームタイトル */}
+      <Container maxWidth="md" sx={{ display: "flex", flexDirection: "column", gap: 2.5, px: { xs: 1, sm: 2 } }}>
+        {/* ゲームタイトルとルール説明 */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Typography
             variant="h5"
             component="h1"
-            sx={{
-              color: "#1a237e",
-              fontWeight: "bold",
-              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-              textAlign: "center",
-            }}
+            sx={{ color: "text.primary", textAlign: "center" }}
           >
             駒取りゲーム
           </Typography>
 
-          {/* ゲームルール説明 - 高さを上げて2行に */}
-          <Paper
-            elevation={2}
-            sx={{
-              p: 2,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-              minHeight: "70px",
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "#333", lineHeight: 1.6, ml: { xs: 0, sm: 15 } }}>
+          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, ml: { xs: 0, sm: 15 } }}>
               ・3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います
               <br />
               ・最後の1個を取った方が負けです
@@ -568,14 +492,7 @@ export default function PieceTakingGame() {
         </Box>
 
         {/* ゲームボード */}
-        <Paper
-          elevation={3}
-          sx={{
-            p: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
-            borderRadius: "8px",
-          }}
-        >
+        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
           <Box
             sx={{
               display: "grid",
@@ -608,18 +525,19 @@ export default function PieceTakingGame() {
           {gameState.lastAIMove && (
             <Box
               sx={{
-                mt: 1,
-                p: 1,
-                backgroundColor: "rgba(66, 66, 66, 0.05)",
-                borderRadius: "6px",
+                mt: 1.5,
+                p: 1.5,
+                backgroundColor: "#f9fafb",
+                borderRadius: 2,
                 textAlign: "center",
-                border: "1px dashed rgba(0, 0, 0, 0.1)",
+                border: "1px dashed",
+                borderColor: "divider",
               }}
             >
               <Typography
                 variant="body2"
                 sx={{
-                  color: "#555",
+                  color: "text.secondary",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -629,17 +547,11 @@ export default function PieceTakingGame() {
                 <Box
                   component="span"
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: 10,
+                    height: 10,
                     borderRadius: "50%",
-                    backgroundColor:
-                      gameState.lastAIMove.color === "blue"
-                        ? "#1a237e"
-                        : gameState.lastAIMove.color === "yellow"
-                          ? "#f57f17"
-                          : "#b71c1c",
+                    backgroundColor: pieceColors[gameState.lastAIMove.color].main,
                     display: "inline-block",
-                    mr: 0.5,
                   }}
                 />
                 AIの手: {colorNames[gameState.lastAIMove.color]}から {gameState.lastAIMove.count} 個取りました
@@ -650,36 +562,18 @@ export default function PieceTakingGame() {
 
         {/* コントロールパネル */}
         {!gameState.gameOver ? (
-          <Paper
-            elevation={3}
-            sx={{
-              p: 2,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
+          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", alignItems: "center" }}>
             {gameState.currentTurn === "player" ? (
               <>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 2,
-                    width: "100%",
-                  }}
-                >
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
                   {/* 色選択 */}
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
                       p: 1,
-                      backgroundColor: "rgba(240, 240, 245, 0.5)",
-                      borderRadius: "8px",
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 2,
                       justifyContent: "center",
                     }}
                   >
@@ -687,43 +581,19 @@ export default function PieceTakingGame() {
                       onClick={selectPrevColor}
                       size="small"
                       disabled={getAvailableColorsFromState(gameState).length <= 1}
-                      sx={{
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                        p: 0.5,
-                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
-                      }}
+                      sx={{ p: 0.5 }}
                     >
-                      <ArrowBack fontSize="small" sx={{ color: "#333" }} />
+                      <ArrowBack fontSize="small" sx={{ color: "text.secondary" }} />
                     </IconButton>
 
                     <Box
                       sx={{
-                        width: 30,
-                        height: 30,
+                        width: 32,
+                        height: 32,
                         borderRadius: "50%",
-                        backgroundColor:
-                          gameState.selectedColor === "blue"
-                            ? "#1a237e"
-                            : gameState.selectedColor === "yellow"
-                              ? "#f57f17"
-                              : "#b71c1c",
-                        mx: 2,
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                        border: "1px solid rgba(255,255,255,0.8)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          top: 5,
-                          left: 5,
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6), transparent 70%)",
-                        },
+                        backgroundColor: pieceColors[gameState.selectedColor].main,
+                        mx: 2.5,
+                        boxShadow: `0 2px 6px ${pieceColors[gameState.selectedColor].shadow}40`,
                       }}
                     />
 
@@ -731,13 +601,9 @@ export default function PieceTakingGame() {
                       onClick={selectNextColor}
                       size="small"
                       disabled={getAvailableColorsFromState(gameState).length <= 1}
-                      sx={{
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                        p: 0.5,
-                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
-                      }}
+                      sx={{ p: 0.5 }}
                     >
-                      <ArrowForward fontSize="small" sx={{ color: "#333" }} />
+                      <ArrowForward fontSize="small" sx={{ color: "text.secondary" }} />
                     </IconButton>
                   </Box>
 
@@ -747,8 +613,8 @@ export default function PieceTakingGame() {
                       display: "flex",
                       alignItems: "center",
                       p: 1,
-                      backgroundColor: "rgba(240, 240, 245, 0.5)",
-                      borderRadius: "8px",
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 2,
                       justifyContent: "center",
                     }}
                   >
@@ -756,22 +622,14 @@ export default function PieceTakingGame() {
                       onClick={decreaseCount}
                       disabled={gameState.selectedCount <= 1}
                       size="small"
-                      sx={{
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                        p: 0.5,
-                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
-                      }}
+                      sx={{ p: 0.5 }}
                     >
-                      <ArrowDownward fontSize="small" sx={{ color: "#333" }} />
+                      <ArrowDownward fontSize="small" sx={{ color: "text.secondary" }} />
                     </IconButton>
 
                     <Typography
                       variant="body1"
-                      sx={{
-                        mx: 2,
-                        color: "#333",
-                        fontWeight: "medium",
-                      }}
+                      sx={{ mx: 2.5, color: "text.primary", fontWeight: 500 }}
                     >
                       {gameState.selectedCount} 個
                     </Typography>
@@ -780,13 +638,9 @@ export default function PieceTakingGame() {
                       onClick={increaseCount}
                       disabled={gameState.selectedCount >= getMaxSelectableCount()}
                       size="small"
-                      sx={{
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                        p: 0.5,
-                        "&.Mui-disabled .MuiSvgIcon-root": { color: "#bdbdbd" },
-                      }}
+                      sx={{ p: 0.5 }}
                     >
-                      <ArrowUpward fontSize="small" sx={{ color: "#333" }} />
+                      <ArrowUpward fontSize="small" sx={{ color: "text.secondary" }} />
                     </IconButton>
                   </Box>
                 </Box>
@@ -796,7 +650,7 @@ export default function PieceTakingGame() {
                     display: "flex",
                     gap: 2,
                     justifyContent: "center",
-                    mt: 2,
+                    mt: 2.5,
                     flexDirection: { xs: "column", sm: "row" },
                     width: "100%",
                   }}
@@ -805,16 +659,13 @@ export default function PieceTakingGame() {
                     variant="contained"
                     onClick={confirmPlayerMove}
                     sx={{
-                      borderRadius: "20px",
+                      borderRadius: 10,
                       px: 3,
-                      py: 0.8,
-                      backgroundColor: "#4caf50",
+                      py: 1,
+                      backgroundColor: "#059669",
                       color: "#fff",
-                      fontWeight: "bold",
-                      boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
-                      "&:hover": {
-                        backgroundColor: "#388e3c",
-                      },
+                      fontWeight: 600,
+                      "&:hover": { backgroundColor: "#047857" },
                       width: { xs: "100%", sm: "auto" },
                     }}
                   >
@@ -825,20 +676,12 @@ export default function PieceTakingGame() {
                     variant="outlined"
                     onClick={undoLastMove}
                     sx={{
-                      borderRadius: "20px",
+                      borderRadius: 10,
                       px: 3,
-                      py: 0.8,
-                      color: "#555",
-                      borderColor: "#ccc",
-                      backgroundColor: "rgba(255, 255, 255, 0.7)",
-                      "&:hover": {
-                        backgroundColor: "rgba(240, 240, 240, 0.9)",
-                        borderColor: "#999",
-                      },
-                      "&.Mui-disabled": {
-                        opacity: 0.5,
-                        color: "#999",
-                      },
+                      py: 1,
+                      color: "text.secondary",
+                      borderColor: "divider",
+                      "&:hover": { borderColor: "text.secondary" },
                       width: { xs: "100%", sm: "auto" },
                     }}
                     disabled={history.length < 2}
@@ -848,16 +691,15 @@ export default function PieceTakingGame() {
                 </Box>
               </>
             ) : (
-              <Box sx={{ textAlign: "center", py: 1 }}>
-                <Typography variant="body1" sx={{ color: "#333", mb: 1 }}>
+              <Box sx={{ textAlign: "center", py: 2 }}>
+                <Typography variant="body1" sx={{ color: "text.primary", mb: 1.5 }}>
                   AIの番です...
                 </Typography>
                 <Box
                   sx={{
-                    width: 24,
-                    height: 24,
+                    width: 28,
+                    height: 28,
                     borderRadius: "50%",
-                    backgroundColor: "#f0f0f0",
                     margin: "0 auto",
                     position: "relative",
                     "&::before": {
@@ -868,7 +710,7 @@ export default function PieceTakingGame() {
                       width: "100%",
                       height: "100%",
                       borderRadius: "50%",
-                      border: "3px solid #3f51b5",
+                      border: "3px solid #2d3142",
                       borderTopColor: "transparent",
                       animation: "spin 1s linear infinite",
                     },
@@ -882,35 +724,20 @@ export default function PieceTakingGame() {
             )}
           </Paper>
         ) : (
-          <Paper
-            elevation={3}
-            sx={{
-              p: 2,
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "8px",
-              textAlign: "center",
-            }}
-          >
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                color: "#333",
-                fontWeight: "bold",
-              }}
-            >
+          <Paper sx={{ p: 3, border: "1px solid", borderColor: "divider", textAlign: "center" }}>
+            <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
               ゲーム終了
             </Typography>
             <Typography
               variant="body1"
               gutterBottom
               sx={{
-                color: gameState.winner === "player" ? "#4caf50" : "#f44336",
-                fontWeight: "medium",
+                color: gameState.winner === "player" ? "#059669" : "#dc2626",
+                fontWeight: 600,
                 mb: 2,
-                p: 1,
-                backgroundColor: gameState.winner === "player" ? "rgba(76, 175, 80, 0.1)" : "rgba(244, 67, 54, 0.1)",
-                borderRadius: "6px",
+                p: 1.5,
+                backgroundColor: gameState.winner === "player" ? "#ecfdf5" : "#fef2f2",
+                borderRadius: 2,
                 display: "inline-block",
               }}
             >
@@ -929,7 +756,6 @@ export default function PieceTakingGame() {
               <Button
                 variant="contained"
                 onClick={() => {
-                  // ゲームをリセット
                   setGameState({
                     bluePieces: 4,
                     yellowPieces: 3,
@@ -945,17 +771,14 @@ export default function PieceTakingGame() {
                 }}
                 size="small"
                 sx={{
-                  borderRadius: "20px",
+                  borderRadius: 10,
                   px: 3,
-                  py: 0.8,
-                  backgroundColor: "#4caf50",
+                  py: 1,
+                  backgroundColor: "#059669",
                   color: "#fff",
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 5px rgba(76, 175, 80, 0.3)",
+                  fontWeight: 600,
                   width: { xs: "100%", sm: "auto" },
-                  "&:hover": {
-                    backgroundColor: "#388e3c",
-                  },
+                  "&:hover": { backgroundColor: "#047857" },
                 }}
               >
                 やり直す
@@ -967,14 +790,14 @@ export default function PieceTakingGame() {
                 to="/"
                 size="small"
                 sx={{
-                  borderRadius: "20px",
+                  borderRadius: 10,
                   px: 3,
-                  py: 0.8,
-                  backgroundColor: "#3f51b5",
+                  py: 1,
+                  backgroundColor: "#2d3142",
                   color: "#fff",
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 5px rgba(63, 81, 181, 0.3)",
+                  fontWeight: 600,
                   width: { xs: "100%", sm: "auto" },
+                  "&:hover": { backgroundColor: "#4f5d75" },
                 }}
               >
                 タイトルに戻る
@@ -992,13 +815,13 @@ export default function PieceTakingGame() {
               variant="outlined"
               size="small"
               sx={{
-                borderRadius: "20px",
+                borderRadius: 10,
                 px: 3,
                 py: 0.5,
-                color: "#555",
-                borderColor: "#ccc",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                fontSize: "0.8rem",
+                color: "text.secondary",
+                borderColor: "divider",
+                fontSize: "0.85rem",
+                "&:hover": { borderColor: "text.secondary" },
                 width: { xs: "100%", sm: "auto" },
               }}
             >

@@ -1,56 +1,66 @@
 import type React from "react"
-import { Card, CardContent, Typography, Button, Box, Container } from "@mui/material"
+import { Card, CardContent, Typography, Button, Box, Container, CssBaseline } from "@mui/material"
 import { ThemeProvider, createTheme } from "@mui/material/styles"
 import { BrowserRouter as Router, Routes, Route, Link as RouterLink } from "react-router-dom"
 import PieceTakingGame from "./pages/PieceTakingGame"
 import StrangeOthello from "./pages/StrangeOthello"
 import ModMGame from "./pages/ModMGame"
 
-// テーマの設定を変更して、デフォルトのテキスト色を調整
 const theme = createTheme({
   palette: {
-    mode: "dark",
-    primary: {
-      main: "#9c27b0", // Purple
-    },
-    secondary: {
-      main: "#3f51b5", // Blue
-    },
+    mode: "light",
+    primary: { main: "#2d3142" },
+    secondary: { main: "#ef8354" },
     background: {
-      default: "#121212",
-      paper: "rgba(45, 45, 55, 0.8)",
+      default: "#faf9f6",
+      paper: "#ffffff",
     },
     text: {
-      primary: "#f5f5f5",
-      secondary: "#b0b0b0",
+      primary: "#2d3142",
+      secondary: "#6b7280",
     },
+    success: { main: "#059669" },
+    error: { main: "#dc2626" },
   },
+  shape: { borderRadius: 12 },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Noto Sans JP", system-ui, sans-serif',
+    h2: { fontWeight: 700, letterSpacing: "-0.02em" },
+    h4: { fontWeight: 700, letterSpacing: "-0.01em" },
+    h5: { fontWeight: 700 },
+    h6: { fontWeight: 700 },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 4,
+          borderRadius: 10,
           textTransform: "none",
-          padding: "12px 16px",
-          fontWeight: "bold",
-          fontSize: "1.1rem",
+          fontWeight: 600,
+          boxShadow: "none",
+          "&:hover": { boxShadow: "none" },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
-          border: "2px solid rgba(156, 39, 176, 0.5)",
-          boxShadow: "0 4px 20px rgba(156, 39, 176, 0.2)",
-          transition: "all 0.3s",
+          borderRadius: 16,
+          border: "1px solid rgba(0,0,0,0.06)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.03)",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
           "&:hover": {
-            borderColor: "rgba(156, 39, 176, 0.8)",
-            backgroundColor: "rgba(55, 55, 65, 0.8)",
+            transform: "translateY(-4px)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.05)",
           },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.03)",
         },
       },
     },
@@ -67,18 +77,20 @@ function GameCard({ title, description, to }: GameCardProps) {
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardContent
-        sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", p: { xs: 2, sm: 3 } }}
+        sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", p: { xs: 2.5, sm: 3.5 } }}
       >
         <Typography
           variant="h5"
           component="h3"
           gutterBottom
-          fontWeight="bold"
-          sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+          sx={{
+            fontSize: { xs: "1.25rem", sm: "1.4rem" },
+            color: "text.primary",
+          }}
         >
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.7 }}>
           {description}
         </Typography>
         <Box sx={{ mt: "auto", width: "100%" }}>
@@ -88,12 +100,13 @@ function GameCard({ title, description, to }: GameCardProps) {
             variant="contained"
             fullWidth
             sx={{
-              py: { xs: 1, sm: 1.5 },
-              background: "linear-gradient(45deg, #9c27b0 30%, #3f51b5 90%)",
+              py: { xs: 1.2, sm: 1.5 },
+              backgroundColor: "#ef8354",
+              color: "#fff",
+              fontSize: { xs: "0.9rem", sm: "1rem" },
               "&:hover": {
-                background: "linear-gradient(45deg, #7b1fa2 30%, #303f9f 90%)",
+                backgroundColor: "#e06b3a",
               },
-              fontSize: { xs: "0.875rem", sm: "1rem" },
             }}
           >
             プレイする
@@ -104,14 +117,12 @@ function GameCard({ title, description, to }: GameCardProps) {
   )
 }
 
-// ゲームカードのラッパーコンポーネント
 function GameCardWrapper({ children }: { children: React.ReactNode }) {
   return (
     <Box
       sx={{
         width: "100%",
-        padding: 2,
-        // レスポンシブなサイズ設定
+        padding: 1.5,
         flexBasis: {
           xs: "100%",
           sm: "50%",
@@ -133,7 +144,7 @@ function HomePage() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(to bottom, #1a1a2e, #16213e)",
+        bgcolor: "background.default",
         p: { xs: 2, sm: 4 },
       }}
     >
@@ -142,40 +153,34 @@ function HomePage() {
           variant="h2"
           component="h1"
           gutterBottom
-          fontWeight="bold"
           sx={{
-            background: "linear-gradient(45deg, #f9a825, #f44336, #9c27b0)",
-            backgroundClip: "text",
-            textFillColor: "transparent",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            mb: 2,
-            fontSize: { xs: "2rem", sm: "3rem", md: "3.75rem" },
+            color: "text.primary",
+            mb: 1.5,
+            fontSize: { xs: "2rem", sm: "3rem", md: "3.5rem" },
           }}
         >
           頭脳王に挑戦！
         </Typography>
 
         <Typography
-          variant="h4"
+          variant="h6"
           component="h2"
           gutterBottom
-          color="text.secondary"
           sx={{
-            mb: { xs: 4, sm: 8 },
-            fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2.125rem" },
+            color: "text.secondary",
+            fontWeight: 400,
+            mb: { xs: 5, sm: 8 },
+            fontSize: { xs: "1rem", sm: "1.15rem", md: "1.25rem" },
           }}
         >
           必勝法を見抜いて、AIに勝利しよう
         </Typography>
 
-        {/* Gridの代わりにflexboxを使用 */}
         <Box
           sx={{
             display: "flex",
             flexWrap: "wrap",
-            margin: -2, // ネガティブマージンでGameCardWrapperのpaddingを相殺
-            mt: 4,
+            margin: -1.5,
           }}
         >
           <GameCardWrapper>
@@ -216,6 +221,7 @@ function HomePage() {
 function App() {
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
