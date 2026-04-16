@@ -1,5 +1,5 @@
 import { DIRECTIONS, INITIAL_BOARD } from "./constants"
-import type { Board, EvalTable, Position, StrangeOthelloGameState, StrangeOthelloSession } from "./types"
+import type { Board, EvalTable, OthelloColor, Position, StrangeOthelloGameState, StrangeOthelloSession } from "./types"
 
 function cloneBoard(board: Board): Board {
   return board.map((row) => [...row])
@@ -11,6 +11,10 @@ function isValidPosition(board: Board, row: number, col: number) {
 
 function isSamePosition(left: Position, right: Position) {
   return left.row === right.row && left.col === right.col
+}
+
+function getOpponentColor(color: OthelloColor): OthelloColor {
+  return color === "black" ? "white" : "black"
 }
 
 function buildGameState(
@@ -60,6 +64,10 @@ export function countPieces(board: Board, color: "black" | "white") {
 
 export function encodeBoard(board: Board) {
   return board.flat().map((cell) => (cell === "empty" ? "." : cell === "black" ? "B" : "W")).join("")
+}
+
+export function encodeEvalState(board: Board, turn: OthelloColor) {
+  return `${turn[0]}:${encodeBoard(board)}`
 }
 
 export function findValidMoves(board: Board, color: "black" | "white"): Position[] {
@@ -147,6 +155,39 @@ export function determineWinner(board: Board): "black" | "white" | "draw" {
   return "draw"
 }
 
+function resolveNextTurnState(board: Board, playerWhoFinishedTurn: OthelloColor) {
+  const nextTurn = getOpponentColor(playerWhoFinishedTurn)
+  const nextValidMoves = findValidMoves(board, nextTurn)
+
+  if (nextValidMoves.length > 0) {
+    return {
+      currentTurn: nextTurn,
+      validMoves: nextValidMoves,
+      gameOver: false,
+      winner: null,
+    }
+  }
+
+  const retryValidMoves = findValidMoves(board, playerWhoFinishedTurn)
+  const gameOver = retryValidMoves.length === 0
+
+  return {
+    currentTurn: playerWhoFinishedTurn,
+    validMoves: retryValidMoves,
+    gameOver,
+    winner: gameOver ? determineWinner(board) : null,
+  }
+}
+
+function getEvalValue(board: Board, turn: OthelloColor, evalTable: EvalTable | null) {
+  if (!evalTable) {
+    return null
+  }
+
+  const value = evalTable.evalTable[encodeEvalState(board, turn)]
+  return value !== undefined ? value : null
+}
+
 export function applyBlackMove(state: StrangeOthelloGameState, row: number, col: number): StrangeOthelloGameState | null {
   if (
     state.currentTurn !== "black" ||
@@ -157,13 +198,15 @@ export function applyBlackMove(state: StrangeOthelloGameState, row: number, col:
   }
 
   const nextBoard = placePiece(state.board, row, col, "black")
-  const whiteValidMoves = findValidMoves(nextBoard, "white")
-  const blackValidMoves = whiteValidMoves.length > 0 ? [] : findValidMoves(nextBoard, "black")
-  const gameOver = whiteValidMoves.length === 0 && blackValidMoves.length === 0
-  const currentTurn = whiteValidMoves.length > 0 ? "white" : "black"
-  const validMoves = currentTurn === "white" ? whiteValidMoves : blackValidMoves
+  const nextTurnState = resolveNextTurnState(nextBoard, "black")
 
-  return buildGameState(nextBoard, currentTurn, validMoves, gameOver, gameOver ? determineWinner(nextBoard) : null)
+  return buildGameState(
+    nextBoard,
+    nextTurnState.currentTurn,
+    nextTurnState.validMoves,
+    nextTurnState.gameOver,
+    nextTurnState.winner,
+  )
 }
 
 export function applyWhiteMove(
@@ -175,34 +218,31 @@ export function applyWhiteMove(
   }
 
   if (!move) {
-    const blackValidMoves = findValidMoves(state.board, "black")
+    const nextTurnState = resolveNextTurnState(state.board, "white")
 
     return buildGameState(
       state.board,
-      blackValidMoves.length > 0 ? "black" : "white",
-      blackValidMoves,
-      blackValidMoves.length === 0,
-      blackValidMoves.length === 0 ? determineWinner(state.board) : null,
+      nextTurnState.currentTurn,
+      nextTurnState.validMoves,
+      nextTurnState.gameOver,
+      nextTurnState.winner,
     )
   }
 
   const nextBoard = placePiece(state.board, move.row, move.col, "white")
-  const blackValidMoves = findValidMoves(nextBoard, "black")
-  const whiteValidMoves = findValidMoves(nextBoard, "white")
-  const gameOver = blackValidMoves.length === 0 && whiteValidMoves.length === 0
-  const currentTurn = blackValidMoves.length > 0 ? "black" : "white"
-  const validMoves = currentTurn === "black" ? blackValidMoves : whiteValidMoves
+  const nextTurnState = resolveNextTurnState(nextBoard, "white")
 
-  return buildGameState(nextBoard, currentTurn, validMoves, gameOver, gameOver ? determineWinner(nextBoard) : null)
+  return buildGameState(
+    nextBoard,
+    nextTurnState.currentTurn,
+    nextTurnState.validMoves,
+    nextTurnState.gameOver,
+    nextTurnState.winner,
+  )
 }
 
-export function getCurrentEval(board: Board, evalTable: EvalTable | null) {
-  if (!evalTable) {
-    return null
-  }
-
-  const value = evalTable.evalTable[encodeBoard(board)]
-  return value !== undefined ? value : null
+export function getCurrentEval(board: Board, currentTurn: OthelloColor, evalTable: EvalTable | null) {
+  return getEvalValue(board, currentTurn, evalTable)
 }
 
 export function getMoveEvals(gameState: StrangeOthelloGameState, evalTable: EvalTable | null) {
@@ -214,9 +254,10 @@ export function getMoveEvals(gameState: StrangeOthelloGameState, evalTable: Eval
 
   for (const move of gameState.validMoves) {
     const nextBoard = placePiece(gameState.board, move.row, move.col, gameState.currentTurn)
-    const value = evalTable.evalTable[encodeBoard(nextBoard)]
+    const nextTurnState = resolveNextTurnState(nextBoard, gameState.currentTurn)
+    const value = getEvalValue(nextBoard, nextTurnState.currentTurn, evalTable)
 
-    if (value !== undefined) {
+    if (value !== null) {
       result.set(`${move.row},${move.col}`, value)
     }
   }

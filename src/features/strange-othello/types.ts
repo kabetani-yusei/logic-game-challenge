@@ -1,3 +1,4 @@
+export type OthelloColor = "black" | "white"
 export type CellState = "empty" | "black" | "white"
 export type Board = CellState[][]
 
@@ -7,7 +8,7 @@ export interface Position {
 }
 
 export interface OthelloSolutionTable {
-  initialTurn: "black" | "white"
+  initialTurn: OthelloColor
   rootValue: number
   whiteMoveTable: Record<string, [number, number]>
   visitedStateCount: number
@@ -22,11 +23,11 @@ export interface EvalTable {
 
 export interface StrangeOthelloGameState {
   board: Board
-  currentTurn: "black" | "white"
+  currentTurn: OthelloColor
   blackScore: number
   whiteScore: number
   gameOver: boolean
-  winner: "black" | "white" | "draw" | null
+  winner: OthelloColor | "draw" | null
   validMoves: Position[]
 }
 

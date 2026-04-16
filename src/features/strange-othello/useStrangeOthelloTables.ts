@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { STRANGE_OTHELLO_TABLES_VERSION } from "./constants"
 import type { EvalTable, OthelloSolutionTable } from "./types"
 
 export function useStrangeOthelloTables() {
@@ -10,9 +11,10 @@ export function useStrangeOthelloTables() {
 
     async function loadTables() {
       try {
+        const versionSuffix = `?v=${STRANGE_OTHELLO_TABLES_VERSION}`
         const [solutionResponse, evalResponse] = await Promise.all([
-          fetch("/strange-othello-table.json"),
-          fetch("/strange-othello-eval.json"),
+          fetch(`/strange-othello-table.json${versionSuffix}`),
+          fetch(`/strange-othello-eval.json${versionSuffix}`),
         ])
 
         const [solutionData, evalData] = await Promise.all([

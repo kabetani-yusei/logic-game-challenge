@@ -41,6 +41,10 @@ def encode_board(board):
     return "".join(chars)
 
 
+def encode_eval_state(board, turn):
+    return f"{turn[0]}:{encode_board(board)}"
+
+
 def find_valid_moves(board, color):
     opponent = "white" if color == "black" else "black"
     moves = []
@@ -94,7 +98,7 @@ white_move_table = {}
 
 
 def minimax(board, turn):
-    key = turn[0] + encode_board(board)
+    key = encode_eval_state(board, turn)
     if key in cache:
         return cache[key]
 
@@ -107,15 +111,14 @@ def minimax(board, turn):
             # ゲーム終了
             result = count_pieces(board, "black") - count_pieces(board, "white")
             cache[key] = result
-            eval_table[encode_board(board)] = result
+            eval_table[encode_eval_state(board, turn)] = result
+            eval_table[encode_eval_state(board, opponent)] = result
             return result
         # パス
         result = minimax(board, opponent)
         cache[key] = result
-        eval_table[encode_board(board)] = result
+        eval_table[key] = result
         return result
-
-    encoded = encode_board(board)
 
     if turn == "black":
         best = -999
@@ -123,7 +126,7 @@ def minimax(board, turn):
             new_board = place_piece(board, row, col, "black")
             best = max(best, minimax(new_board, "white"))
         cache[key] = best
-        eval_table[encoded] = best
+        eval_table[key] = best
         return best
     else:
         best = 999
@@ -135,9 +138,9 @@ def minimax(board, turn):
                 best = val
                 best_move = (row, col)
         cache[key] = best
-        eval_table[encoded] = best
+        eval_table[key] = best
         if best_move is not None:
-            white_move_table[encoded] = list(best_move)
+            white_move_table[encode_board(board)] = list(best_move)
         return best
 
 

@@ -2,6 +2,7 @@ import type { Board, Position } from "./types"
 
 export const STRANGE_OTHELLO_STORAGE_KEY = "logic-game-challenge/strange-othello"
 export const STRANGE_OTHELLO_STORAGE_VERSION = 1
+export const STRANGE_OTHELLO_TABLES_VERSION = 2
 
 export const DIRECTIONS: Position[] = [
   { row: -1, col: 0 },

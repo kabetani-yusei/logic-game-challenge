@@ -69,7 +69,7 @@ export function useStrangeOthelloGame() {
   return {
     gameState,
     showEvaluation,
-    currentEval: showEvaluation ? getCurrentEval(gameState.board, evalTable) : null,
+    currentEval: showEvaluation ? getCurrentEval(gameState.board, gameState.currentTurn, evalTable) : null,
     moveEvals: showEvaluation && !gameState.gameOver ? getMoveEvals(gameState, evalTable) : new Map<string, number>(),
     canUndo: history.length >= 2,
     handleTitleClick: () => {
