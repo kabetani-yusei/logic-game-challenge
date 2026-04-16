@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Box, Typography, Button, Paper, Container } from "@mui/material"
 import { Link } from "react-router-dom"
 
@@ -23,6 +23,12 @@ interface OthelloSolutionTable {
   whiteMoveTable: Record<string, [number, number]>
   visitedStateCount: number
   whiteStateCount: number
+}
+
+interface EvalTable {
+  rootValue: number
+  evalTable: Record<string, number>
+  stateCount: number
 }
 
 // ゲーム全体の状態
@@ -61,8 +67,8 @@ export default function Othello() {
   // ※ 中央部分：Row2, Row3 の列2～3に斜めパターン（Row2: [white, black]、Row3: [black, white]）
   // -------------------------------------------------------------------
   const initialBoard: Board = [
-    // Row 0: 上段 — col0～col4 が black、col5 が white
-    ["black", "black", "black", "black", "black", "white"],
+    // Row 0: 上段 — col0 と col5 が white、col1～col4 が black
+    ["white", "black", "black", "black", "black", "white"],
     // Row 1
     ["black", "empty", "empty", "empty", "empty", "white"],
     // Row 2
@@ -71,8 +77,8 @@ export default function Othello() {
     ["black", "empty", "black", "white", "empty", "white"],
     // Row 4
     ["black", "empty", "empty", "empty", "empty", "white"],
-    // Row 5: 下段 — 左端は black、右側は white
-    ["black", "white", "white", "white", "white", "white"],
+    // Row 5: 下段 — 全て white
+    ["white", "white", "white", "white", "white", "white"],
   ]
 
   // -------------------------------------------------------------------
@@ -95,6 +101,23 @@ export default function Othello() {
   const [gameState, setGameState] = useState<GameState>(initialGameState)
   const [history, setHistory] = useState<GameState[]>([initialGameState])
   const [solutionTable, setSolutionTable] = useState<OthelloSolutionTable | null>(null)
+  const [evalTable, setEvalTable] = useState<EvalTable | null>(null)
+  const [showEvaluation, setShowEvaluation] = useState(false)
+  const titleClickCount = useRef(0)
+  const titleClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleTitleClick() {
+    titleClickCount.current += 1
+    if (titleClickTimer.current) clearTimeout(titleClickTimer.current)
+    if (titleClickCount.current >= 5) {
+      titleClickCount.current = 0
+      setShowEvaluation((prev) => !prev)
+    } else {
+      titleClickTimer.current = setTimeout(() => {
+        titleClickCount.current = 0
+      }, 1000)
+    }
+  }
 
   // -------------------------------------------------------------------
   // ゲーム状態の更新と履歴への追加を一括で行う関数
@@ -115,8 +138,20 @@ export default function Othello() {
       }
     }
 
+    async function loadEvalTable() {
+      const response = await fetch("/strange-othello-eval.json")
+      const table = (await response.json()) as EvalTable
+      if (!cancelled) {
+        setEvalTable(table)
+      }
+    }
+
     loadSolutionTable().catch((error) => {
       console.error("Failed to load strange othello table", error)
+    })
+
+    loadEvalTable().catch((error) => {
+      console.error("Failed to load strange othello eval table", error)
     })
 
     return () => {
@@ -143,6 +178,29 @@ export default function Othello() {
 
   function encodeBoard(board: Board): string {
     return board.flat().map((cell) => (cell === "empty" ? "." : cell === "black" ? "B" : "W")).join("")
+  }
+
+  // 現在の局面の評価値を取得
+  function getCurrentEval(): number | null {
+    if (!evalTable) return null
+    const key = encodeBoard(gameState.board)
+    const value = evalTable.evalTable[key]
+    return value !== undefined ? value : null
+  }
+
+  // 各有効手の評価値を取得（手を打った後の局面の評価値）
+  function getMoveEvals(): Map<string, number> {
+    const result = new Map<string, number>()
+    if (!evalTable) return result
+    for (const move of gameState.validMoves) {
+      const newBoard = placePiece(gameState.board, move.row, move.col, gameState.currentTurn)
+      const key = encodeBoard(newBoard)
+      const value = evalTable.evalTable[key]
+      if (value !== undefined) {
+        result.set(`${move.row},${move.col}`, value)
+      }
+    }
+    return result
   }
 
   // 指定した色の有効な手を探す
@@ -335,6 +393,20 @@ export default function Othello() {
   }
 
   // ===========================================================
+  // ================      Evaluation Display     ============
+  // ===========================================================
+  const currentEval = showEvaluation ? getCurrentEval() : null
+  const moveEvals = showEvaluation && !gameState.gameOver ? getMoveEvals() : new Map<string, number>()
+
+  // 評価値バーの黒の割合を計算（0〜100%）
+  // 評価値の範囲は概ね -36 〜 +36（6x6盤面の全マス数）
+  function evalToBarPercent(evalValue: number): number {
+    const maxEval = 36
+    const clamped = Math.max(-maxEval, Math.min(maxEval, evalValue))
+    return ((clamped + maxEval) / (2 * maxEval)) * 100
+  }
+
+  // ===========================================================
   // ================         Rendering UI         ============
   // ===========================================================
   return (
@@ -356,7 +428,8 @@ export default function Othello() {
           <Typography
             variant="h5"
             component="h1"
-            sx={{ color: "text.primary", textAlign: "center" }}
+            onClick={handleTitleClick}
+            sx={{ color: "text.primary", textAlign: "center", userSelect: "none", cursor: "default" }}
           >
             ストレンジオセロ
           </Typography>
@@ -415,6 +488,54 @@ export default function Othello() {
           </Box>
         </Paper>
 
+        {/* 評価値表示 */}
+        {showEvaluation && currentEval !== null && (
+          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                評価値（黒視点）
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  color: currentEval > 0 ? "#1a1a2e" : currentEval < 0 ? "#dc2626" : "#d97706",
+                }}
+              >
+                {currentEval > 0 ? `+${currentEval}` : currentEval}
+              </Typography>
+            </Box>
+            {/* 評価値バー */}
+            <Box
+              sx={{
+                width: "100%",
+                height: 20,
+                borderRadius: 2,
+                overflow: "hidden",
+                display: "flex",
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Box
+                sx={{
+                  width: `${evalToBarPercent(currentEval)}%`,
+                  height: "100%",
+                  backgroundColor: "#1a1a2e",
+                  transition: "width 0.3s ease",
+                }}
+              />
+              <Box
+                sx={{
+                  flex: 1,
+                  height: "100%",
+                  backgroundColor: "#f5f5f5",
+                }}
+              />
+            </Box>
+          </Paper>
+        )}
+
         {/* 盤面 */}
         <Paper
           sx={{
@@ -428,69 +549,85 @@ export default function Othello() {
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             {gameState.board.map((row, rowIndex) => (
               <Box key={`row-${rowIndex}`} sx={{ display: "flex", flexDirection: "row" }}>
-                {row.map((cell, colIndex) => (
-                  <Box
-                    key={`cell-${rowIndex}-${colIndex}`}
-                    onClick={() => handleBlackMove(rowIndex, colIndex)}
-                    sx={{
-                      width: "16.666%",
-                      paddingTop: "16.666%",
-                      position: "relative",
-                      backgroundColor: "#2d6a4f",
-                      border: "1px solid #40916c",
-                      cursor:
-                        gameState.currentTurn === "black" &&
-                        gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
-                          ? "pointer"
-                          : "default",
-                      "&:hover": {
-                        backgroundColor:
-                          gameState.currentTurn === "black" &&
-                          gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
-                            ? "#1b4332"
-                            : "#2d6a4f",
-                      },
-                      ...(gameState.currentTurn === "black" &&
-                      gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
-                        ? {
-                            "&::after": {
-                              content: '""',
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: "30%",
-                              height: "30%",
-                              borderRadius: "50%",
-                              backgroundColor: "rgba(255, 255, 255, 0.25)",
-                            },
-                          }
-                        : {}),
-                    }}
-                  >
-                    {cell !== "empty" && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: "10%",
-                          left: "10%",
-                          width: "80%",
-                          height: "80%",
-                          borderRadius: "50%",
-                          backgroundColor: cell === "black" ? "#1a1a2e" : "#f5f5f5",
-                          border: cell === "white" ? "1.5px solid #d1d5db" : "none",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                        }}
-                      />
-                    )}
-                  </Box>
-                ))}
+                {row.map((cell, colIndex) => {
+                  const isValidMove = gameState.currentTurn === "black" &&
+                    gameState.validMoves.some((move) => move.row === rowIndex && move.col === colIndex)
+                  const moveEval = showEvaluation ? moveEvals.get(`${rowIndex},${colIndex}`) : undefined
+
+                  return (
+                    <Box
+                      key={`cell-${rowIndex}-${colIndex}`}
+                      onClick={() => handleBlackMove(rowIndex, colIndex)}
+                      sx={{
+                        width: "16.666%",
+                        paddingTop: "16.666%",
+                        position: "relative",
+                        backgroundColor: "#2d6a4f",
+                        border: "1px solid #40916c",
+                        cursor: isValidMove ? "pointer" : "default",
+                        "&:hover": {
+                          backgroundColor: isValidMove ? "#1b4332" : "#2d6a4f",
+                        },
+                        ...(isValidMove && !showEvaluation
+                          ? {
+                              "&::after": {
+                                content: '""',
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                width: "30%",
+                                height: "30%",
+                                borderRadius: "50%",
+                                backgroundColor: "rgba(255, 255, 255, 0.25)",
+                              },
+                            }
+                          : {}),
+                      }}
+                    >
+                      {cell !== "empty" && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "10%",
+                            left: "10%",
+                            width: "80%",
+                            height: "80%",
+                            borderRadius: "50%",
+                            backgroundColor: cell === "black" ? "#1a1a2e" : "#f5f5f5",
+                            border: cell === "white" ? "1.5px solid #d1d5db" : "none",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          }}
+                        />
+                      )}
+                      {/* 各手の評価値を表示 */}
+                      {showEvaluation && isValidMove && moveEval !== undefined && (
+                        <Typography
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            color: moveEval > 0 ? "#a7f3d0" : moveEval < 0 ? "#fca5a5" : "#fde68a",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                            zIndex: 1,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {moveEval > 0 ? `+${moveEval}` : moveEval}
+                        </Typography>
+                      )}
+                    </Box>
+                  )
+                })}
               </Box>
             ))}
           </Box>
         </Paper>
 
-        {/* ゲーム中の場合：Undoボタンとタイトルへ戻るボタン */}
+        {/* ゲーム中の場合：Undoボタン、評価値ボタン、タイトルへ戻るボタン */}
         {!gameState.gameOver && (
           <Box
             sx={{
