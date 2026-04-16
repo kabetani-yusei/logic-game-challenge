@@ -26,7 +26,7 @@ export default function PieceTakingGamePage() {
     <GamePageLayout
       title="駒取りゲーム"
       rules={
-        <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, ml: { xs: 0, sm: 15 } }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
           ・3色のコマから1色を選び、その色のコマを1個以上取る行為を交互に行います
           <br />
           ・最後の1個を取った方が負けです
@@ -41,16 +41,40 @@ export default function PieceTakingGamePage() {
         selectedCount={gameState.selectedCount}
         availableColorCount={availableColors.length}
         maxSelectableCount={maxSelectableCount}
-        canUndo={canUndo}
         onNextColor={handleNextColor}
         onPrevColor={handlePrevColor}
         onIncreaseCount={handleIncreaseCount}
         onDecreaseCount={handleDecreaseCount}
         onConfirmMove={handleConfirmMove}
-        onUndo={handleUndo}
       />
 
-      <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 1.5,
+          flexDirection: { xs: "column", sm: "row" },
+          width: { xs: "100%", sm: "auto" },
+        }}
+      >
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleUndo}
+          disabled={!canUndo}
+          sx={{
+            borderRadius: 10,
+            px: 3,
+            py: 0.5,
+            color: "text.secondary",
+            borderColor: "divider",
+            fontSize: "0.85rem",
+            "&:hover": { borderColor: "text.secondary" },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
+          1手戻る
+        </Button>
         <Button
           component={Link}
           to="/"

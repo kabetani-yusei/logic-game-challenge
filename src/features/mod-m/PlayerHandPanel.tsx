@@ -1,4 +1,4 @@
-import { Box, Button, ButtonBase, Paper, Typography } from "@mui/material"
+import { Box, ButtonBase, Paper, Typography } from "@mui/material"
 import type { ModMGameState } from "./types"
 
 const CARD_SX = {
@@ -15,12 +15,10 @@ const CARD_SX = {
 
 interface PlayerHandPanelProps {
   gameState: ModMGameState
-  canUndo: boolean
   onCardSelect: (card: number) => void
-  onUndo: () => void
 }
 
-export default function PlayerHandPanel({ gameState, canUndo, onCardSelect, onUndo }: PlayerHandPanelProps) {
+export default function PlayerHandPanel({ gameState, onCardSelect }: PlayerHandPanelProps) {
   const disabled = gameState.currentTurn !== "player" || gameState.gameOver
 
   return (
@@ -28,7 +26,7 @@ export default function PlayerHandPanel({ gameState, canUndo, onCardSelect, onUn
       <Typography variant="body2" gutterBottom sx={{ color: "text.primary", fontWeight: 500 }}>
         あなたの手札
       </Typography>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, justifyContent: "center", mb: 2 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, justifyContent: "center" }}>
         {gameState.playerCards.length > 0 ? (
           gameState.playerCards.map((card) => (
             <ButtonBase
@@ -63,24 +61,6 @@ export default function PlayerHandPanel({ gameState, canUndo, onCardSelect, onUn
           </Typography>
         )}
       </Box>
-      <Button
-        variant="outlined"
-        onClick={onUndo}
-        disabled={!canUndo}
-        size="small"
-        sx={{
-          borderRadius: 10,
-          px: 3,
-          py: 0.5,
-          color: "text.secondary",
-          borderColor: "divider",
-          fontSize: "0.85rem",
-          "&:hover": { borderColor: "text.secondary" },
-          width: { xs: "100%", sm: "auto" },
-        }}
-      >
-        1手戻る
-      </Button>
     </Paper>
   )
 }

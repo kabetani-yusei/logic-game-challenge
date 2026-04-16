@@ -14,7 +14,7 @@ export default function ModMGamePage() {
     <GamePageLayout
       title="mod Mゲーム"
       rules={
-        <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, ml: { xs: 0, sm: 15 } }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
           1. プレイヤーと AIが交互にカードを出します。（今回はプレイヤーは後手です。）
           <br />
           2. カードを出したときに、合計が9の倍数になったら、そのカードを出した人の負けです。
@@ -25,9 +25,35 @@ export default function ModMGamePage() {
     >
       <ModMStatusPanels gameState={gameState} />
       <PlayedCardsPanel gameState={gameState} />
-      <PlayerHandPanel gameState={gameState} canUndo={canUndo} onCardSelect={handleCardSelect} onUndo={handleUndo} />
+      <PlayerHandPanel gameState={gameState} onCardSelect={handleCardSelect} />
 
-      <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 1.5,
+          flexDirection: { xs: "column", sm: "row" },
+          width: { xs: "100%", sm: "auto" },
+        }}
+      >
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleUndo}
+          disabled={!canUndo}
+          sx={{
+            borderRadius: 10,
+            px: 3,
+            py: 0.5,
+            color: "text.secondary",
+            borderColor: "divider",
+            fontSize: "0.85rem",
+            "&:hover": { borderColor: "text.secondary" },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
+          1手戻る
+        </Button>
         <Button
           component={Link}
           to="/"

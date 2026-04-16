@@ -9,13 +9,11 @@ interface PieceTakingControlsProps {
   selectedCount: number
   availableColorCount: number
   maxSelectableCount: number
-  canUndo: boolean
   onNextColor: () => void
   onPrevColor: () => void
   onIncreaseCount: () => void
   onDecreaseCount: () => void
   onConfirmMove: () => void
-  onUndo: () => void
 }
 
 export default function PieceTakingControls({
@@ -24,13 +22,11 @@ export default function PieceTakingControls({
   selectedCount,
   availableColorCount,
   maxSelectableCount,
-  canUndo,
   onNextColor,
   onPrevColor,
   onIncreaseCount,
   onDecreaseCount,
   onConfirmMove,
-  onUndo,
 }: PieceTakingControlsProps) {
   if (currentTurn === "ai") {
     return (
@@ -129,10 +125,8 @@ export default function PieceTakingControls({
       <Box
         sx={{
           display: "flex",
-          gap: 2,
           justifyContent: "center",
           mt: 2.5,
-          flexDirection: { xs: "column", sm: "row" },
           width: "100%",
         }}
       >
@@ -151,23 +145,6 @@ export default function PieceTakingControls({
           }}
         >
           決定
-        </Button>
-
-        <Button
-          variant="outlined"
-          onClick={onUndo}
-          disabled={!canUndo}
-          sx={{
-            borderRadius: 10,
-            px: 3,
-            py: 1,
-            color: "text.secondary",
-            borderColor: "divider",
-            "&:hover": { borderColor: "text.secondary" },
-            width: { xs: "100%", sm: "auto" },
-          }}
-        >
-          1手戻る
         </Button>
       </Box>
     </Paper>
