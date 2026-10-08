@@ -49,31 +49,6 @@ export function getAvailableColors(state: PieceTakingGameState): PieceColor[] {
   return PIECE_COLOR_ORDER.filter((color) => getPieceCount(state, color) > 0)
 }
 
-export function cycleSelectedColor(state: PieceTakingGameState, direction: -1 | 1): PieceTakingGameState {
-  const availableColors = getAvailableColors(state)
-
-  if (availableColors.length <= 1) {
-    return state
-  }
-
-  let index = PIECE_COLOR_ORDER.indexOf(state.selectedColor)
-
-  for (let step = 0; step < PIECE_COLOR_ORDER.length; step += 1) {
-    index = (index + direction + PIECE_COLOR_ORDER.length) % PIECE_COLOR_ORDER.length
-    const candidate = PIECE_COLOR_ORDER[index]
-
-    if (getPieceCount(state, candidate) > 0) {
-      return {
-        ...state,
-        selectedColor: candidate,
-        selectedCount: 1,
-      }
-    }
-  }
-
-  return state
-}
-
 export function changeSelectedCount(state: PieceTakingGameState, delta: -1 | 1): PieceTakingGameState {
   const maxSelectableCount = getPieceCount(state, state.selectedColor)
   const nextCount = Math.min(Math.max(state.selectedCount + delta, 1), maxSelectableCount)
@@ -89,23 +64,8 @@ export function changeSelectedCount(state: PieceTakingGameState, delta: -1 | 1):
 }
 
 export function selectPile(state: PieceTakingGameState, color: PieceColor): PieceTakingGameState {
-  const pieceCount = getPieceCount(state, color)
-
-  if (pieceCount === 0) {
+  if (getPieceCount(state, color) === 0 || state.selectedColor === color) {
     return state
-  }
-
-  if (state.selectedColor === color) {
-    const nextCount = Math.min(state.selectedCount + 1, pieceCount)
-
-    if (nextCount === state.selectedCount) {
-      return state
-    }
-
-    return {
-      ...state,
-      selectedCount: nextCount,
-    }
   }
 
   return {
@@ -115,14 +75,37 @@ export function selectPile(state: PieceTakingGameState, color: PieceColor): Piec
   }
 }
 
+export function setSelection(state: PieceTakingGameState, color: PieceColor, count: number): PieceTakingGameState {
+  const pieceCount = getPieceCount(state, color)
+
+  if (!Number.isInteger(count) || count < 1 || count > pieceCount) {
+    return state
+  }
+
+  if (state.selectedColor === color && state.selectedCount === count) {
+    return state
+  }
+
+  return {
+    ...state,
+    selectedColor: color,
+    selectedCount: count,
+  }
+}
+
 export function applyPlayerMove(state: PieceTakingGameState): PieceTakingGameState {
   if (state.currentTurn !== "player" || state.gameOver) {
     return state
   }
 
   const currentCount = getPieceCount(state, state.selectedColor)
+
+  if (state.selectedCount < 1 || state.selectedCount > currentCount) {
+    return state
+  }
+
   const nextState = {
-    ...withPieceCount(state, state.selectedColor, Math.max(currentCount - state.selectedCount, 0)),
+    ...withPieceCount(state, state.selectedColor, currentCount - state.selectedCount),
     currentTurn: "ai" as const,
   }
 

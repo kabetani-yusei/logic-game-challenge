@@ -1,14 +1,20 @@
 import { useEffect } from "react"
 import { usePersistentState } from "../../hooks/usePersistentState"
-import { createInitialModMSession, MOD_M_STORAGE_KEY, MOD_M_STORAGE_VERSION } from "./constants"
+import { canUndo, pushHistory, undoSession } from "../../lib/history"
+import { createInitialModMSession, MOD_M_STORAGE_KEY } from "./constants"
 import { chooseAiCard, playCard } from "./logic"
-import type { ModMSession } from "./types"
+import { modMStorageOptions } from "./storage"
+import type { ModMGameState } from "./types"
+
+export const AI_THINKING_DELAY_MS = 900
+
+const isPlayerTurn = (state: ModMGameState) => state.currentTurn === "player" && !state.gameOver
 
 export function useModMGame() {
-  const [session, setSession, resetSession] = usePersistentState<ModMSession>(
+  const [session, setSession, resetSession] = usePersistentState(
     MOD_M_STORAGE_KEY,
     createInitialModMSession,
-    { version: MOD_M_STORAGE_VERSION },
+    modMStorageOptions,
   )
   const { gameState, history } = session
 
@@ -31,17 +37,18 @@ export function useModMGame() {
 
         return {
           gameState: playCard(previousSession.gameState, chosenCard, "ai"),
-          history: [...previousSession.history, previousSession.gameState],
+          history: pushHistory(previousSession.history, previousSession.gameState),
         }
       })
-    }, 1000)
+    }, AI_THINKING_DELAY_MS)
 
     return () => window.clearTimeout(timerId)
   }, [gameState.currentTurn, gameState.gameOver, setSession])
 
   return {
     gameState,
-    canUndo: history.length >= 2,
+    canUndo: canUndo(history, isPlayerTurn),
+    inProgress: gameState.playedBy.includes("player") && !gameState.gameOver,
     handleCardSelect: (card: number) => {
       setSession((previousSession) => {
         const nextGameState = playCard(previousSession.gameState, card, "player")
@@ -52,30 +59,11 @@ export function useModMGame() {
 
         return {
           gameState: nextGameState,
-          history: [...previousSession.history, previousSession.gameState],
+          history: pushHistory(previousSession.history, previousSession.gameState),
         }
       })
     },
-    handleUndo: () => {
-      setSession((previousSession) => {
-        if (previousSession.history.length < 2) {
-          return previousSession
-        }
-
-        const nextHistory = [...previousSession.history]
-        nextHistory.pop()
-        const restoredState = nextHistory.pop()
-
-        if (!restoredState) {
-          return previousSession
-        }
-
-        return {
-          gameState: restoredState,
-          history: nextHistory,
-        }
-      })
-    },
-    handleRestart: () => resetSession(),
+    handleUndo: () => setSession((previousSession) => undoSession(previousSession, isPlayerTurn)),
+    handleRestart: resetSession,
   }
 }

@@ -11,10 +11,10 @@ export const COLOR_NAMES: Record<PieceColor, string> = {
   red: "赤色",
 }
 
-export const PIECE_COLORS: Record<PieceColor, { main: string; light: string; shadow: string }> = {
-  blue: { main: "#3b5998", light: "#5b7dc0", shadow: "#2c4373" },
-  yellow: { main: "#d4a017", light: "#e6b830", shadow: "#b8860b" },
-  red: { main: "#c0392b", light: "#e05544", shadow: "#8b1a10" },
+export const PIECE_COLORS: Record<PieceColor, { main: string; light: string; shadow: string; contrastText: string }> = {
+  blue: { main: "#3d6fd6", light: "#8fb3ff", shadow: "#1f3f8a", contrastText: "#ffffff" },
+  yellow: { main: "#e2a300", light: "#ffe07a", shadow: "#9a6a00", contrastText: "#2a1d00" },
+  red: { main: "#d9443a", light: "#ff9a8f", shadow: "#8a1f17", contrastText: "#ffffff" },
 }
 
 export function createInitialPieceTakingState(): PieceTakingGameState {

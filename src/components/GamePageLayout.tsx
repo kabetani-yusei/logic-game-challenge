@@ -1,59 +1,98 @@
-import type { ReactNode } from "react"
-import { Box, Container, Paper, Typography } from "@mui/material"
-import type { ContainerProps, TypographyProps } from "@mui/material"
+import { useEffect, type ReactNode } from "react"
+import { Accordion, AccordionDetails, AccordionSummary, Box, Container, Stack, Typography } from "@mui/material"
+import type { ContainerProps } from "@mui/material"
+import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded"
+import MenuBookRounded from "@mui/icons-material/MenuBookRounded"
 
 interface GamePageLayoutProps {
-  title: ReactNode
+  title: string
+  subtitle?: ReactNode
   rules: ReactNode
+  status?: ReactNode
+  actions?: ReactNode
   children: ReactNode
   maxWidth?: ContainerProps["maxWidth"]
-  titleProps?: TypographyProps
   onTitleClick?: () => void
 }
 
 export default function GamePageLayout({
   title,
+  subtitle,
   rules,
+  status,
+  actions,
   children,
   maxWidth = "md",
-  titleProps,
   onTitleClick,
 }: GamePageLayoutProps) {
+  useEffect(() => {
+    document.title = `${title} | 頭脳王に挑戦！`
+  }, [title])
+
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        bgcolor: "background.default",
-        p: { xs: 1.5, sm: 3 },
-        pt: { xs: 3, sm: 4 },
-      }}
-    >
-      <Container maxWidth={maxWidth} sx={{ display: "flex", flexDirection: "column", gap: 2.5, px: { xs: 1, sm: 2 } }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+    <Container maxWidth={maxWidth} sx={{ py: { xs: 2.5, sm: 4 }, px: { xs: 2, sm: 3 } }}>
+      <Stack spacing={{ xs: 2, sm: 2.5 }} useFlexGap>
+        <Box sx={{ textAlign: "center" }}>
           <Typography
-            variant="h5"
+            variant="h4"
             component="h1"
             onClick={onTitleClick}
             sx={{
-              color: "text.primary",
-              textAlign: "center",
-              ...(onTitleClick ? { userSelect: "none", cursor: "default" } : {}),
+              fontSize: { xs: "1.6rem", sm: "2rem" },
+              ...(onTitleClick ? { userSelect: "none", WebkitUserSelect: "none" } : {}),
             }}
-            {...titleProps}
           >
             {title}
           </Typography>
-          <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider" }}>
-            {rules}
-          </Paper>
+          {subtitle && (
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              {subtitle}
+            </Typography>
+          )}
         </Box>
 
+        <Accordion defaultExpanded>
+          <AccordionSummary
+            expandIcon={<ExpandMoreRounded />}
+            aria-controls="game-rules-content"
+            id="game-rules-header"
+            sx={{ px: 2.5, minHeight: 52 }}
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <MenuBookRounded fontSize="small" sx={{ color: "primary.main" }} aria-hidden />
+              <Typography sx={{ fontWeight: 700 }}>ルール</Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 2.5, pt: 0, pb: 2.5, color: "text.secondary", lineHeight: 1.8 }}>
+            {rules}
+          </AccordionDetails>
+        </Accordion>
+
+        {status}
         {children}
-      </Container>
+
+        {actions && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ justifyContent: "center", alignItems: "stretch", pt: 0.5 }}
+          >
+            {actions}
+          </Stack>
+        )}
+      </Stack>
+    </Container>
+  )
+}
+
+export function RuleList({ items }: { items: ReactNode[] }) {
+  return (
+    <Box component="ol" sx={{ m: 0, pl: 2.5, "& > li + li": { mt: 0.75 } }}>
+      {items.map((item, index) => (
+        <Typography key={index} component="li" variant="body2" sx={{ lineHeight: 1.8 }}>
+          {item}
+        </Typography>
+      ))}
     </Box>
   )
 }
