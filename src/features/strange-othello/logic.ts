@@ -17,27 +17,43 @@ function getOpponentColor(color: OthelloColor): OthelloColor {
   return color === "black" ? "white" : "black"
 }
 
+interface TurnState {
+  currentTurn: OthelloColor
+  validMoves: Position[]
+  gameOver: boolean
+  winner: OthelloColor | "draw" | null
+  passed: OthelloColor | null
+}
+
 function buildGameState(
   board: Board,
-  currentTurn: "black" | "white",
-  validMoves: Position[],
-  gameOver = false,
-  winner: "black" | "white" | "draw" | null = null,
+  turnState: TurnState,
+  lastMove: StrangeOthelloGameState["lastMove"] = null,
+  flipped: Position[] = [],
 ): StrangeOthelloGameState {
   return {
     board,
-    currentTurn,
+    currentTurn: turnState.currentTurn,
     blackScore: countPieces(board, "black"),
     whiteScore: countPieces(board, "white"),
-    gameOver,
-    winner,
-    validMoves,
+    gameOver: turnState.gameOver,
+    winner: turnState.winner,
+    validMoves: turnState.validMoves,
+    lastMove,
+    flipped,
+    passed: turnState.passed,
   }
 }
 
 export function createInitialStrangeOthelloState(): StrangeOthelloGameState {
   const board = cloneBoard(INITIAL_BOARD)
-  return buildGameState(board, "black", findValidMoves(board, "black"))
+  return buildGameState(board, {
+    currentTurn: "black",
+    validMoves: findValidMoves(board, "black"),
+    gameOver: false,
+    winner: null,
+    passed: null,
+  })
 }
 
 export function createInitialStrangeOthelloSession(): StrangeOthelloSession {
@@ -155,7 +171,7 @@ export function determineWinner(board: Board): "black" | "white" | "draw" {
   return "draw"
 }
 
-function resolveNextTurnState(board: Board, playerWhoFinishedTurn: OthelloColor) {
+function resolveNextTurnState(board: Board, playerWhoFinishedTurn: OthelloColor): TurnState {
   const nextTurn = getOpponentColor(playerWhoFinishedTurn)
   const nextValidMoves = findValidMoves(board, nextTurn)
 
@@ -165,6 +181,7 @@ function resolveNextTurnState(board: Board, playerWhoFinishedTurn: OthelloColor)
       validMoves: nextValidMoves,
       gameOver: false,
       winner: null,
+      passed: null,
     }
   }
 
@@ -176,7 +193,14 @@ function resolveNextTurnState(board: Board, playerWhoFinishedTurn: OthelloColor)
     validMoves: retryValidMoves,
     gameOver,
     winner: gameOver ? determineWinner(board) : null,
+    passed: gameOver ? null : nextTurn,
   }
+}
+
+function applyMove(state: StrangeOthelloGameState, move: Position, color: OthelloColor) {
+  const flipped = getFlippedPieces(state.board, move.row, move.col, color)
+  const nextBoard = placePiece(state.board, move.row, move.col, color)
+  return buildGameState(nextBoard, resolveNextTurnState(nextBoard, color), { ...move, color }, flipped)
 }
 
 function getEvalValue(board: Board, turn: OthelloColor, evalTable: EvalTable | null) {
@@ -189,56 +213,53 @@ function getEvalValue(board: Board, turn: OthelloColor, evalTable: EvalTable | n
 }
 
 export function applyBlackMove(state: StrangeOthelloGameState, row: number, col: number): StrangeOthelloGameState | null {
-  if (
-    state.currentTurn !== "black" ||
-    state.gameOver ||
-    !state.validMoves.some((move) => move.row === row && move.col === col)
-  ) {
+  if (state.currentTurn !== "black" || state.gameOver || !isPlayableMove(state.validMoves, row, col)) {
     return null
   }
 
-  const nextBoard = placePiece(state.board, row, col, "black")
-  const nextTurnState = resolveNextTurnState(nextBoard, "black")
-
-  return buildGameState(
-    nextBoard,
-    nextTurnState.currentTurn,
-    nextTurnState.validMoves,
-    nextTurnState.gameOver,
-    nextTurnState.winner,
-  )
+  return applyMove(state, { row, col }, "black")
 }
 
-export function applyWhiteMove(
-  state: StrangeOthelloGameState,
-  move: Position | null,
-): StrangeOthelloGameState | null {
+/**
+ * 解析テーブルが示す白（AI）の手を検証し、合法手でなければ最も多く返せる手にフォールバックする。
+ * テーブルが改ざん・破損していても不正な盤面にはならない。
+ */
+export function chooseWhiteMove(state: StrangeOthelloGameState, tableMove: Position | null): Position | null {
+  if (state.validMoves.length === 0) {
+    return null
+  }
+
+  if (tableMove && isPlayableMove(state.validMoves, tableMove.row, tableMove.col)) {
+    return tableMove
+  }
+
+  let bestMove = state.validMoves[0]
+  let bestFlips = -1
+
+  for (const move of state.validMoves) {
+    const flips = getFlippedPieces(state.board, move.row, move.col, "white").length
+
+    if (flips > bestFlips) {
+      bestMove = move
+      bestFlips = flips
+    }
+  }
+
+  return bestMove
+}
+
+export function applyWhiteMove(state: StrangeOthelloGameState, tableMove: Position | null): StrangeOthelloGameState | null {
   if (state.currentTurn !== "white" || state.gameOver) {
     return null
   }
 
-  if (!move) {
-    const nextTurnState = resolveNextTurnState(state.board, "white")
+  const move = chooseWhiteMove(state, tableMove)
 
-    return buildGameState(
-      state.board,
-      nextTurnState.currentTurn,
-      nextTurnState.validMoves,
-      nextTurnState.gameOver,
-      nextTurnState.winner,
-    )
+  if (!move) {
+    return buildGameState(state.board, resolveNextTurnState(state.board, "white"))
   }
 
-  const nextBoard = placePiece(state.board, move.row, move.col, "white")
-  const nextTurnState = resolveNextTurnState(nextBoard, "white")
-
-  return buildGameState(
-    nextBoard,
-    nextTurnState.currentTurn,
-    nextTurnState.validMoves,
-    nextTurnState.gameOver,
-    nextTurnState.winner,
-  )
+  return applyMove(state, move, "white")
 }
 
 export function getCurrentEval(board: Board, currentTurn: OthelloColor, evalTable: EvalTable | null) {

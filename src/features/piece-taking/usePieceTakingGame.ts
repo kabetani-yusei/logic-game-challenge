@@ -1,26 +1,28 @@
 import { useEffect } from "react"
 import { usePersistentState } from "../../hooks/usePersistentState"
-import {
-  createInitialPieceTakingSession,
-  PIECE_TAKING_STORAGE_KEY,
-  PIECE_TAKING_STORAGE_VERSION,
-} from "./constants"
+import { canUndo, pushHistory, undoSession } from "../../lib/history"
+import { createInitialPieceTakingSession, PIECE_TAKING_STORAGE_KEY } from "./constants"
 import {
   applyAIMove,
   applyPlayerMove,
   changeSelectedCount,
-  cycleSelectedColor,
   getAvailableColors,
   getPieceCount,
   selectPile,
+  setSelection,
 } from "./logic"
-import type { PieceColor, PieceTakingSession } from "./types"
+import { pieceTakingStorageOptions } from "./storage"
+import type { PieceColor, PieceTakingGameState } from "./types"
+
+export const AI_THINKING_DELAY_MS = 700
+
+const isPlayerTurn = (state: PieceTakingGameState) => state.currentTurn === "player" && !state.gameOver
 
 export function usePieceTakingGame() {
-  const [session, setSession, resetSession] = usePersistentState<PieceTakingSession>(
+  const [session, setSession, resetSession] = usePersistentState(
     PIECE_TAKING_STORAGE_KEY,
     createInitialPieceTakingSession,
-    { version: PIECE_TAKING_STORAGE_VERSION },
+    pieceTakingStorageOptions,
   )
   const { gameState, history } = session
 
@@ -37,71 +39,49 @@ export function usePieceTakingGame() {
 
         return {
           gameState: applyAIMove(previousSession.gameState),
-          history: [...previousSession.history, previousSession.gameState],
+          history: pushHistory(previousSession.history, previousSession.gameState),
         }
       })
-    }, 500)
+    }, AI_THINKING_DELAY_MS)
 
     return () => window.clearTimeout(timerId)
   }, [gameState.currentTurn, gameState.gameOver, setSession])
 
-  const availableColors = getAvailableColors(gameState)
-  const maxSelectableCount = getPieceCount(gameState, gameState.selectedColor)
-
-  const updateSelection = (updater: (state: typeof gameState) => typeof gameState) => {
-    setSession((previousSession) => ({
-      ...previousSession,
-      gameState: updater(previousSession.gameState),
-    }))
-  }
-
-  const commitTurn = (updater: (state: typeof gameState) => typeof gameState) => {
+  const updateSelection = (updater: (state: PieceTakingGameState) => PieceTakingGameState) => {
     setSession((previousSession) => {
-      const nextGameState = updater(previousSession.gameState)
-
-      if (nextGameState === previousSession.gameState) {
+      if (!isPlayerTurn(previousSession.gameState)) {
         return previousSession
       }
 
-      return {
-        gameState: nextGameState,
-        history: [...previousSession.history, previousSession.gameState],
-      }
+      return { ...previousSession, gameState: updater(previousSession.gameState) }
     })
   }
 
   return {
     gameState,
-    history,
-    availableColors,
-    maxSelectableCount,
-    canUndo: history.length >= 2,
+    availableColors: getAvailableColors(gameState),
+    maxSelectableCount: getPieceCount(gameState, gameState.selectedColor),
+    canUndo: canUndo(history, isPlayerTurn),
+    inProgress: history.length > 0 && !gameState.gameOver,
     handlePileSelect: (color: PieceColor) => updateSelection((state) => selectPile(state, color)),
-    handleNextColor: () => updateSelection((state) => cycleSelectedColor(state, 1)),
-    handlePrevColor: () => updateSelection((state) => cycleSelectedColor(state, -1)),
+    handlePieceSelect: (color: PieceColor, count: number) => updateSelection((state) => setSelection(state, color, count)),
     handleIncreaseCount: () => updateSelection((state) => changeSelectedCount(state, 1)),
     handleDecreaseCount: () => updateSelection((state) => changeSelectedCount(state, -1)),
-    handleConfirmMove: () => commitTurn(applyPlayerMove),
-    handleUndo: () => {
+    handleConfirmMove: () => {
       setSession((previousSession) => {
-        if (previousSession.history.length < 2) {
-          return previousSession
-        }
+        const nextGameState = applyPlayerMove(previousSession.gameState)
 
-        const nextHistory = [...previousSession.history]
-        nextHistory.pop()
-        const restoredState = nextHistory.pop()
-
-        if (!restoredState) {
+        if (nextGameState === previousSession.gameState) {
           return previousSession
         }
 
         return {
-          gameState: restoredState,
-          history: nextHistory,
+          gameState: nextGameState,
+          history: pushHistory(previousSession.history, previousSession.gameState),
         }
       })
     },
-    handleRestart: () => resetSession(),
+    handleUndo: () => setSession((previousSession) => undoSession(previousSession, isPlayerTurn)),
+    handleRestart: resetSession,
   }
 }

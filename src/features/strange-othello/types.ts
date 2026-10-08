@@ -29,6 +29,10 @@ export interface StrangeOthelloGameState {
   gameOver: boolean
   winner: OthelloColor | "draw" | null
   validMoves: Position[]
+  lastMove: (Position & { color: OthelloColor }) | null
+  flipped: Position[]
+  /** 直前の手番でパスした側（パスが発生していなければ null） */
+  passed: OthelloColor | null
 }
 
 export interface StrangeOthelloSession {
