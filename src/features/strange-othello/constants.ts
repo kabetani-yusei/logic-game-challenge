@@ -1,8 +1,8 @@
-import type { Board, Position } from "./types"
+import type { Board, Position } from "./types.ts"
 
 export const STRANGE_OTHELLO_STORAGE_KEY = "logic-game-challenge/strange-othello"
 export const STRANGE_OTHELLO_STORAGE_VERSION = 2
-export const STRANGE_OTHELLO_TABLES_VERSION = 2
+export const STRANGE_OTHELLO_TABLES_VERSION = 3
 
 export const BOARD_SIZE = 6
 

@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef } from "react"
 import { usePersistentState } from "../../hooks/usePersistentState"
 import { canUndo, pushHistory, undoSession } from "../../lib/history"
-import { STRANGE_OTHELLO_STORAGE_KEY } from "./constants"
+import { BOARD_SIZE, STRANGE_OTHELLO_STORAGE_KEY } from "./constants"
 import {
   applyBlackMove,
   applyWhiteMove,
   createInitialStrangeOthelloSession,
-  encodeBoard,
   getCurrentEval,
   getMoveEvals,
 } from "./logic"
 import { strangeOthelloStorageOptions } from "./storage"
+import { encodeBoardKey, lookupTable } from "./tableFormat"
 import { useStrangeOthelloTables } from "./useStrangeOthelloTables"
 import type { Position, StrangeOthelloGameState } from "./types"
 
@@ -53,11 +53,11 @@ export function useStrangeOthelloGame() {
           return previousSession
         }
 
-        const encodedBoard = encodeBoard(previousState.board)
-        const storedMove = Object.hasOwn(solutionTable.whiteMoveTable, encodedBoard)
-          ? solutionTable.whiteMoveTable[encodedBoard]
-          : undefined
-        const tableMove: Position | null = storedMove ? { row: storedMove[0], col: storedMove[1] } : null
+        const storedMove = lookupTable(solutionTable, encodeBoardKey(previousState.board))
+        const tableMove: Position | null =
+          storedMove === undefined
+            ? null
+            : { row: Math.floor(storedMove / BOARD_SIZE), col: storedMove % BOARD_SIZE }
         const nextGameState = applyWhiteMove(previousState, tableMove)
 
         if (!nextGameState) {

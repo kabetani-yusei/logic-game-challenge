@@ -17,10 +17,12 @@ const cspDirectives: Record<string, string[]> = {
   "form-action": ["'none'"],
   "object-src": ["'none'"],
   "frame-src": ["'none'"],
-  "worker-src": ["'none'"],
+  // オフライン対応の Service Worker（同一オリジンの /sw.js のみ）
+  "worker-src": ["'self'"],
   "frame-ancestors": ["'none'"],
   "require-trusted-types-for": ["'script'"],
-  "trusted-types": ["'none'"],
+  // Service Worker 登録用の Trusted Types ポリシーだけを許可する（src/app/serviceWorker.ts）
+  "trusted-types": ["lgc-service-worker"],
   "upgrade-insecure-requests": [],
 }
 
@@ -54,7 +56,9 @@ export const securityHeaders: Record<string, string> = {
 
 export const cacheRules: { source: string; value: string }[] = [
   { source: "/assets/*", value: "public, max-age=31536000, immutable" },
-  { source: "/*.json", value: "public, max-age=86400, must-revalidate" },
+  { source: "/*.bin", value: "public, max-age=86400, must-revalidate" },
+  // Service Worker は常に最新を確認させ、アップデートを即座に検知できるようにする
+  { source: "/sw.js", value: "no-cache" },
 ]
 
 export function renderNetlifyHeaders() {

@@ -1,5 +1,6 @@
 import { DIRECTIONS, INITIAL_BOARD } from "./constants"
-import type { Board, EvalTable, OthelloColor, Position, StrangeOthelloGameState, StrangeOthelloSession } from "./types"
+import { encodeEvalKey, lookupTable, type DecodedTable } from "./tableFormat"
+import type { Board, OthelloColor, Position, StrangeOthelloGameState, StrangeOthelloSession } from "./types"
 
 function cloneBoard(board: Board): Board {
   return board.map((row) => [...row])
@@ -76,14 +77,6 @@ export function countPieces(board: Board, color: "black" | "white") {
   }
 
   return count
-}
-
-export function encodeBoard(board: Board) {
-  return board.flat().map((cell) => (cell === "empty" ? "." : cell === "black" ? "B" : "W")).join("")
-}
-
-export function encodeEvalState(board: Board, turn: OthelloColor) {
-  return `${turn[0]}:${encodeBoard(board)}`
 }
 
 export function findValidMoves(board: Board, color: "black" | "white"): Position[] {
@@ -203,13 +196,12 @@ function applyMove(state: StrangeOthelloGameState, move: Position, color: Othell
   return buildGameState(nextBoard, resolveNextTurnState(nextBoard, color), { ...move, color }, flipped)
 }
 
-function getEvalValue(board: Board, turn: OthelloColor, evalTable: EvalTable | null) {
+function getEvalValue(board: Board, turn: OthelloColor, evalTable: DecodedTable | null) {
   if (!evalTable) {
     return null
   }
 
-  const value = evalTable.evalTable[encodeEvalState(board, turn)]
-  return value !== undefined ? value : null
+  return lookupTable(evalTable, encodeEvalKey(board, turn)) ?? null
 }
 
 export function applyBlackMove(state: StrangeOthelloGameState, row: number, col: number): StrangeOthelloGameState | null {
@@ -262,11 +254,11 @@ export function applyWhiteMove(state: StrangeOthelloGameState, tableMove: Positi
   return applyMove(state, move, "white")
 }
 
-export function getCurrentEval(board: Board, currentTurn: OthelloColor, evalTable: EvalTable | null) {
+export function getCurrentEval(board: Board, currentTurn: OthelloColor, evalTable: DecodedTable | null) {
   return getEvalValue(board, currentTurn, evalTable)
 }
 
-export function getMoveEvals(gameState: StrangeOthelloGameState, evalTable: EvalTable | null) {
+export function getMoveEvals(gameState: StrangeOthelloGameState, evalTable: DecodedTable | null) {
   const result = new Map<string, number>()
 
   if (!evalTable) {

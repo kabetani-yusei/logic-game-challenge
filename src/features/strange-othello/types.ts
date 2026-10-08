@@ -7,20 +7,6 @@ export interface Position {
   col: number
 }
 
-export interface OthelloSolutionTable {
-  initialTurn: OthelloColor
-  rootValue: number
-  whiteMoveTable: Record<string, [number, number]>
-  visitedStateCount: number
-  whiteStateCount: number
-}
-
-export interface EvalTable {
-  rootValue: number
-  evalTable: Record<string, number>
-  stateCount: number
-}
-
 export interface StrangeOthelloGameState {
   board: Board
   currentTurn: OthelloColor

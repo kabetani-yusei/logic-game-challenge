@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/mini"
 
 // Zod は既定で高速化のために new Function() による JIT コンパイルを試みる。
 // 本アプリは CSP（script-src 'self' / Trusted Types）で eval 相当を禁止しているため、
