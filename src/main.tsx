@@ -4,9 +4,9 @@ import { createRoot } from "react-dom/client"
 import { CssBaseline, ThemeProvider } from "@mui/material"
 import { RouterProvider } from "react-router/dom"
 import "@fontsource-variable/inter/wght.css"
-import "@fontsource-variable/noto-sans-jp/wght.css"
 import { appTheme, COLOR_MODE_STORAGE_KEY } from "./app/theme"
 import { router } from "./app/router"
+import { registerServiceWorker } from "./app/serviceWorker"
 
 const container = document.getElementById("root")
 
@@ -22,3 +22,5 @@ createRoot(container).render(
     </ThemeProvider>
   </StrictMode>,
 )
+
+void registerServiceWorker()

@@ -6,7 +6,7 @@ import globals from "globals"
 import tseslint from "typescript-eslint"
 
 export default defineConfig([
-  globalIgnores(["dist", "scripts"]),
+  globalIgnores(["dist", "scripts", "playwright-report", "test-results"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -34,7 +34,16 @@ export default defineConfig([
     },
   },
   {
-    files: ["vite.config.ts", "security-headers*.ts"],
+    files: ["service-worker/**/*.js"],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: "script",
+      globals: { ...globals.serviceworker, PRECACHE_URLS: "readonly", CACHE_VERSION: "readonly" },
+    },
+  },
+  {
+    files: ["vite.config.ts", "security-headers*.ts", "playwright.config.ts", "e2e/**/*.ts"],
     languageOptions: { globals: globals.node },
   },
 ])

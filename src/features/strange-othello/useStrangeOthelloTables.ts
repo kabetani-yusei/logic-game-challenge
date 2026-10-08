@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react"
-import type { z } from "zod"
 import { STRANGE_OTHELLO_TABLES_VERSION } from "./constants"
-import { evalTableSchema, solutionTableSchema } from "./schema"
-import type { EvalTable, OthelloSolutionTable } from "./types"
+import { decodeEvalTable, decodeSolutionTable, type DecodedTable } from "./tableFormat"
 
 export type TableStatus = "idle" | "loading" | "ready" | "error"
 
-interface TableState<T> {
+interface TableState {
   status: TableStatus
-  data: T | null
+  data: DecodedTable | null
 }
 
-// 一度検証したテーブルはページ遷移しても再取得・再検証しない
-const tableCache = new Map<string, Promise<unknown>>()
+// 一度読み込んだテーブルはページ遷移しても再取得・再デコードしない
+const tableCache = new Map<string, Promise<DecodedTable>>()
 
-function loadTable<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+function loadTable(path: string, decode: (buffer: ArrayBuffer) => DecodedTable): Promise<DecodedTable> {
   const url = `${import.meta.env.BASE_URL}${path}?v=${STRANGE_OTHELLO_TABLES_VERSION}`
   const cached = tableCache.get(url)
 
   if (cached) {
-    return cached as Promise<T>
+    return cached
   }
 
   const promise = fetch(url, { credentials: "same-origin" })
@@ -28,7 +26,7 @@ function loadTable<T>(path: string, schema: z.ZodType<T>): Promise<T> {
         throw new Error(`Failed to load ${path}: HTTP ${response.status}`)
       }
 
-      return schema.parse(await response.json())
+      return decode(await response.arrayBuffer())
     })
     .catch((error: unknown) => {
       tableCache.delete(url)
@@ -39,8 +37,8 @@ function loadTable<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   return promise
 }
 
-function useTable<T>(path: string, schema: z.ZodType<T>, enabled: boolean) {
-  const [state, setState] = useState<TableState<T>>({ status: "idle", data: null })
+function useTable(path: string, decode: (buffer: ArrayBuffer) => DecodedTable, enabled: boolean) {
+  const [state, setState] = useState<TableState>({ status: "idle", data: null })
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -50,7 +48,7 @@ function useTable<T>(path: string, schema: z.ZodType<T>, enabled: boolean) {
 
     // 取得処理はキャッシュで共有しているため中断せず、アンマウント後の結果だけを無視する
     let active = true
-    loadTable(path, schema)
+    loadTable(path, decode)
       .then((data) => {
         if (active) setState({ status: "ready", data })
       })
@@ -63,7 +61,7 @@ function useTable<T>(path: string, schema: z.ZodType<T>, enabled: boolean) {
     return () => {
       active = false
     }
-  }, [path, schema, enabled, attempt])
+  }, [path, decode, enabled, attempt])
 
   const status: TableStatus = !enabled ? "idle" : state.status === "idle" ? "loading" : state.status
 
@@ -78,8 +76,8 @@ function useTable<T>(path: string, schema: z.ZodType<T>, enabled: boolean) {
 }
 
 export function useStrangeOthelloTables(evaluationEnabled: boolean) {
-  const solution = useTable<OthelloSolutionTable>("strange-othello-table.json", solutionTableSchema, true)
-  const evaluation = useTable<EvalTable>("strange-othello-eval.json", evalTableSchema, evaluationEnabled)
+  const solution = useTable("strange-othello-solution.bin", decodeSolutionTable, true)
+  const evaluation = useTable("strange-othello-eval.bin", decodeEvalTable, evaluationEnabled)
 
   return { solution, evaluation }
 }

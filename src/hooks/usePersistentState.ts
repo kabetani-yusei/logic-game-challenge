@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { z } from "zod"
+import { z, type Schema } from "../lib/schema"
 
 // localStorage はユーザーや拡張機能が自由に書き換えられる「信頼できない入力」として扱う。
 // 読み込み時はスキーマで検証し、壊れた値・改ざんされた値・旧バージョンの値は破棄して初期状態に戻す。
@@ -7,7 +7,7 @@ const MAX_STORED_BYTES = 256 * 1024
 
 interface UsePersistentStateOptions<T> {
   version: number
-  schema: z.ZodType<T>
+  schema: Schema<T>
 }
 
 function resolveInitialValue<T>(initialValue: T | (() => T)): T {

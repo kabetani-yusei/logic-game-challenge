@@ -2,7 +2,19 @@ import { createTheme } from "@mui/material/styles"
 
 export const COLOR_MODE_STORAGE_KEY = "logic-game-challenge/color-mode"
 
-const FONT_FAMILY = '"Inter Variable", "Noto Sans JP Variable", system-ui, -apple-system, "Hiragino Sans", sans-serif'
+// 欧文は自己ホストの Inter、和文は OS 標準フォントを使う（日本語 Web フォントの数 MB のダウンロードを避ける）
+const FONT_FAMILY = [
+  '"Inter Variable"',
+  '"Hiragino Sans"',
+  '"Hiragino Kaku Gothic ProN"',
+  '"BIZ UDPGothic"',
+  '"Yu Gothic UI"',
+  '"Meiryo"',
+  '"Noto Sans JP"',
+  '"Noto Sans CJK JP"',
+  "system-ui",
+  "sans-serif",
+].join(", ")
 
 declare module "@mui/material/styles" {
   interface Palette {

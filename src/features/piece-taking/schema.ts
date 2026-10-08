@@ -1,23 +1,22 @@
-import { z } from "zod"
 import { MAX_HISTORY_LENGTH } from "../../lib/history"
+import { arrayMax, intBetween, z, type Schema } from "../../lib/schema"
 import type { PieceTakingGameState, PieceTakingSession } from "./types"
 
 const pieceColorSchema = z.enum(["blue", "yellow", "red"])
-const pileCountSchema = z.number().int().min(0).max(9)
 
-export const pieceTakingGameStateSchema: z.ZodType<PieceTakingGameState> = z.object({
-  bluePieces: pileCountSchema,
-  yellowPieces: pileCountSchema,
-  redPieces: pileCountSchema,
+export const pieceTakingGameStateSchema: Schema<PieceTakingGameState> = z.object({
+  bluePieces: intBetween(0, 9),
+  yellowPieces: intBetween(0, 9),
+  redPieces: intBetween(0, 9),
   currentTurn: z.enum(["player", "ai"]),
   selectedColor: pieceColorSchema,
-  selectedCount: z.number().int().min(0).max(9),
+  selectedCount: intBetween(0, 9),
   gameOver: z.boolean(),
-  winner: z.enum(["player", "ai"]).nullable(),
-  lastAIMove: z.object({ color: pieceColorSchema, count: z.number().int().min(1).max(9) }).nullable(),
+  winner: z.nullable(z.enum(["player", "ai"])),
+  lastAIMove: z.nullable(z.object({ color: pieceColorSchema, count: intBetween(1, 9) })),
 })
 
-export const pieceTakingSessionSchema: z.ZodType<PieceTakingSession> = z.object({
+export const pieceTakingSessionSchema: Schema<PieceTakingSession> = z.object({
   gameState: pieceTakingGameStateSchema,
-  history: z.array(pieceTakingGameStateSchema).max(MAX_HISTORY_LENGTH),
+  history: arrayMax(pieceTakingGameStateSchema, MAX_HISTORY_LENGTH),
 })

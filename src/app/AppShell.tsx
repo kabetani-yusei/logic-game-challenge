@@ -3,6 +3,7 @@ import DarkModeRounded from "@mui/icons-material/DarkModeRounded"
 import LightModeRounded from "@mui/icons-material/LightModeRounded"
 import PsychologyRounded from "@mui/icons-material/PsychologyRounded"
 import { Link as RouterLink, Outlet, ScrollRestoration, useNavigation } from "react-router"
+import AppStatusNotices from "./AppStatusNotices"
 
 function ColorModeToggle() {
   const { mode, systemMode, setMode } = useColorScheme()
@@ -107,6 +108,7 @@ export default function AppShell() {
         </Container>
       </Box>
 
+      <AppStatusNotices />
       <ScrollRestoration />
     </Box>
   )
