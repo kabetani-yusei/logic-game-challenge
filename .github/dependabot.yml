@@ -7,6 +7,11 @@ updates:
     # 公開直後の悪意あるバージョンを避けるため、pnpm の minimumReleaseAge と同様に待機期間を設ける
     cooldown:
       default-days: 3
+    ignore:
+      # @types/node は実行環境（.node-version の Node.js 24 LTS）のメジャーに合わせる。
+      # Node.js 本体を上げるときに手動で一緒に更新する。
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
