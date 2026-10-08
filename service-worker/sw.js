@@ -5,6 +5,10 @@ const PRECACHE_NAME = `lgc-precache-${CACHE_VERSION}`
 const RUNTIME_NAME = `lgc-runtime-${CACHE_VERSION}`
 const APP_SHELL_URL = "/index.html"
 const NAVIGATION_TIMEOUT_MS = 4000
+// 配信サーバーが付ける Vary: Origin などで、プリキャッシュ時（Origin なし）と
+// ページからの crossorigin 付きリクエスト（Origin あり）が不一致にならないようにする。
+// キャッシュ対象は同一オリジンの静的ファイルのみなので Vary を無視しても安全。
+const MATCH_OPTIONS = { ignoreVary: true }
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(PRECACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)))
@@ -41,15 +45,15 @@ async function networkFirstNavigation(request) {
       return response
     }
 
-    return (await cache.match(APP_SHELL_URL)) || response
+    return (await cache.match(APP_SHELL_URL, MATCH_OPTIONS)) || response
   } catch {
-    const cached = await cache.match(APP_SHELL_URL)
+    const cached = await cache.match(APP_SHELL_URL, MATCH_OPTIONS)
     return cached || Response.error()
   }
 }
 
 async function cacheFirst(request) {
-  const cached = await caches.match(request)
+  const cached = await caches.match(request, MATCH_OPTIONS)
 
   if (cached) {
     return cached
