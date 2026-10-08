@@ -13,7 +13,7 @@
 ## セットアップ
 
 このリポジトリは `Node.js 24 LTS`（`.node-version`）と `pnpm 12` を前提にしています。
-pnpm のバージョンは `package.json` の `devEngines.packageManager` で固定しており、異なるバージョンの pnpm で実行すると自動的に切り替わります。
+pnpm のバージョンは `package.json` の `packageManager` で固定しており、異なるバージョンの pnpm で実行すると自動的に切り替わります（Corepack にも対応）。
 
 ```bash
 pnpm install --frozen-lockfile
